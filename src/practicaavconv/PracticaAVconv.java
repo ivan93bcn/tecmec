@@ -17,7 +17,7 @@ public class PracticaAVconv {
         
         boolean ok;
         
-        System.out.println("----- COMPRESOR AVCONV -----");
+        System.out.println("----- PROJECTE PRÀCTIQUES -----");
         
         do{
             System.out.print("\nNombre del archivo: ");

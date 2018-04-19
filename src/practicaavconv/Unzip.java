@@ -1,26 +1,11 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package practicaavconv;
 
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
-import java.io.OutputStreamWriter;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.InputStreamReader;
-
-import java.io.FileReader;
-import java.io.Writer;
-import java.io.Reader;
 import java.awt.Color;
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -31,9 +16,8 @@ import javax.imageio.ImageIO;
 
 /**
  *
- * @author spring
+ * @author Ivan Toro and David Muntal
  */
-
 public class Unzip
 {
     List<String> fileList;
