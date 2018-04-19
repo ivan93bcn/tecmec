@@ -1,22 +1,13 @@
 package practicaavconv;
 
-import com.beust.jcommander.JCommander;
-import com.beust.jcommander.Parameter;
-import com.sun.scenario.Settings;
-import java.util.Dictionary;
-
 /**
  *
  * @author Ivan Toro and David Muntal
  */
 public class PracticaAVconv {
-    
-    //public static String INPUT_ZIP_FILE = "test.zip";
-    //public static String OUTPUT_FOLDER = "Cubo";
 
-    public void main( String[] args )
-    {      
-        
+    public static void main( String[] args )
+    {             
         String input = "", output = "";
         int fps = 0;
 
@@ -25,7 +16,7 @@ public class PracticaAVconv {
         /*Settings settings = new Settings();
         new JCommander(settings, args);*/
         
-        int size = args.length;
+        int size = args.length - 1;
         
         for(int i = 0; i <= size; i++){
             
