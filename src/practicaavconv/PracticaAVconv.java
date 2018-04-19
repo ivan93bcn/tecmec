@@ -62,7 +62,6 @@ public class PracticaAVconv {
         System.out.println("----- PROJECTE PRÀCTIQUES -----");
         
         do{
-
             //Unzip and convert to JPG if necessary
             ok = unZip.unZipIt(input+".zip", output, fps);
 
