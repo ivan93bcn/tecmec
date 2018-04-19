@@ -1,5 +1,7 @@
 package practicaavconv;
 
+import com.beust.jcommander.Parameter;
+
 /**
  *
  * @author Ivan Toro and David Muntal
@@ -71,21 +73,31 @@ public class PracticaAVconv {
         } while(!ok);
     }
     
-    /*
-    public class Settings {
- 
-        @Parameter(names = "-url", description = "Server address", required = true)
-        private String url;
+    public class Args {
 
-        @Parameter(names = "-token", description = "Authentication token", required = true)
-        private String authenticationToken;
+        @Parameter(names = { "-i", "--input" }, description = "Input file", required = true)
+        private Integer input = 1;
 
-        @Parameter(names = "-month", description = "Number of month (1-12) for timesheet", required = true)
-        private Integer month;
+        @Parameter(names = { "-o", "--output" }, description = "Output folder", required = true)
+        private String output;
 
-        @Parameter(names = "-year", description = "Year", required = true)
-        private Integer year;
+        @Parameter(names = "--fps", description = "FPS", required = false)
+        private Integer fps;
+
+        @Parameter(names = "--binarization", description = "Binarization filter", required = false)
+        private Integer bin;
+
+        @Parameter(names = "--negative", description = "Negative filter", required = false)
+        private boolean neg = true;
+
+        @Parameter(names = "--averaging", description = "Averaging filter", required = false)
+        private boolean ave = true;
+
+        @Parameter(names = "--sepia", description = "Sepia filter", required = false)
+        private boolean sep = true;
+
+        @Parameter(names = "--bn", description = "Black and white filter", required = false)
+        private boolean bn = true;
     }
-    */
 }
 
