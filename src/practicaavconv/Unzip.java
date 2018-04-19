@@ -21,8 +21,14 @@ import javax.imageio.ImageIO;
 public class Unzip
 {
     List<String> fileList;
+    
+    private boolean neg = false;
+    private boolean sep = false; 
+    private boolean bn = false;
+    private int bin = 0;
+    private int ave = 0;
 
-    public boolean unZipIt(String zipFile, String outputFolder){
+    public boolean unZipIt(String zipFile, String outputFolder, int fps){
 
         byte[] buffer = new byte[1024];
 
@@ -64,19 +70,20 @@ public class Unzip
 
               if (extension.equals("png") || extension.equals("gif") || extension.equals("bmp") || extension.equals("jpeg") || extension.equals("jpg")){
 
-
                 BufferedImage bufferedImage = ImageIO.read(new File(outputFolder + File.separator + current));
 
                  // create a blank, RGB, same width and height, and a white background
                  BufferedImage newBufferedImage = new BufferedImage(bufferedImage.getWidth(), bufferedImage.getHeight(), BufferedImage.TYPE_INT_RGB);
                  newBufferedImage.createGraphics().drawImage(bufferedImage, 0, 0, Color.WHITE, null);
 
+                 // get filtered image
+                 BufferedImage filteredImage = this.getFilteredImage(newBufferedImage);
+                 
                  // write to jpeg file
-                 ImageIO.write(newBufferedImage, "jpeg", new File(outputFolder + File.separator + fileName+".jpeg"));
+                 ImageIO.write(filteredImage, "jpeg", new File(outputFolder + File.separator + fileName+".jpeg"));
 
                  // delete the original file unziped
                  newFile.delete();
-
                  }
 
                 ze = zis.getNextEntry();
@@ -90,7 +97,66 @@ public class Unzip
             return true;
     		
         }catch(IOException ex){
-           return false;
+            return false;
         }
     }    
+    
+        private BufferedImage getFilteredImage(BufferedImage newBufferedImage) {
+            
+            Filtros filter = new Filtros();
+            BufferedImage imgFiltered = newBufferedImage;
+            
+            if(isNeg())
+                imgFiltered = filter.negFilter(imgFiltered);
+            if(isSep())
+                imgFiltered = filter.sepFilter(imgFiltered);
+            if(isBN())
+                imgFiltered = filter.BNFilter(imgFiltered);            
+            if(getBin()!= 0)
+                imgFiltered = filter.binFilter(imgFiltered, getBin());
+            if(getAve()!= 0)
+                imgFiltered = filter.aveFilter(imgFiltered, getAve());            
+            
+            return imgFiltered;
+    }
+    
+    public boolean isNeg() {
+        return neg;
+    }
+
+    public void setNeg(boolean neg) {
+        this.neg = neg;
+    }
+
+    public boolean isSep() {
+        return sep;
+    }
+
+    public void setSep(boolean sep) {
+        this.sep = sep;
+    }
+
+    public boolean isBN() {
+        return bn;
+    }
+
+    public void setBN(boolean bn) {
+        this.bn = bn;
+    }
+    
+    public int getBin() {
+        return bin;
+    }
+
+    public void setBin(int bin) {
+        this.bin = bin;
+    }
+
+    public int getAve() {
+        return ave;
+    }
+
+    public void setAve(int ave) {
+        this.ave = ave;
+    }
 }
