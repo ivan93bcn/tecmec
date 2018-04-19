@@ -8,7 +8,12 @@ import java.awt.image.BufferedImage;
  * @author Ivan Toro and David Muntal
  */
 public class Filtros {
-
+    public static final int[][] filter9 = {{1, 1, 1},
+                                           {1, 1, 1},
+                                           {1, 1, 1}};
+    public static final int[][] filter16 = {{1, 2, 1},
+                                            {2, 4, 2},
+                                            {1, 2, 1}};
     /**
      * Funcion que devuelve la imagen pasada con el filtro de blanco y negro
      * 
@@ -141,12 +146,44 @@ public class Filtros {
         int width = img.getWidth();
         int height = img.getHeight();
         BufferedImage res = new BufferedImage(width, height, BufferedImage.TYPE_3BYTE_BGR);
-        
-        for(int i = 0; i < width; i++) {
-            for(int j = 0; j < height; j++) {
-                
+        for(int i = 1; i + 1< height; i++) {
+            for(int j = 1; j +1 < width; j++) {
+                Color tempColor = getAverageValue(img, i, j, filter9);
+                    res.setRGB(j, i, tempColor.getRGB());
             }
         }
         return res;
     }
+    
+   
+    private Color getAverageValue(BufferedImage img, int y, int x, int[][] filter) {
+        int r = 0, g = 0, b = 0;
+        for (int j = -1; j <= 1; j++) {
+            for (int k = -1; k <= 1; k++) {
+                Color cr = new Color(img.getRGB(x + k, y + j));
+                     int crr   =cr.getRed();
+                r += (filter[1 + j][1 + k] * (crr));
+                g += (filter[1 + j][1 + k] * (new Color(img.getRGB(x + k, y + j))).getGreen());
+                b += (filter[1 + j][1 + k] * (new Color(img.getRGB(x + k, y + j))).getBlue());
+            }
+
+        }
+        r = r / sum(filter);
+        g = g / sum(filter);
+        b = b / sum(filter);
+        return new Color(r, g, b);
+    }
+
+    private int sum(int[][] filter) {
+        int sum = 0;
+        for (int y = 0; y < filter.length; y++) {
+            for (int x = 0; x < filter[y].length; x++) {
+                sum += filter[y][x];
+            }
+        }
+        return sum;
+    }
+    
+
+
 }

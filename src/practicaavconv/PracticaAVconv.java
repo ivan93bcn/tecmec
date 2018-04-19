@@ -11,18 +11,21 @@ public class PracticaAVconv {
     public static void main( String[] args )
     {             
         String input = "", output = "";
-        int fps = 0;
+        int fps = 24;
 
         Unzip unZip = new Unzip();
-        
+        unZip.setNeg(false);
+        unZip.setSep(false);
+        unZip.setBN(false);
         /*Settings settings = new Settings();
         new JCommander(settings, args);*/
         
         int size = args.length - 1;
         
         for(int i = 0; i <= size; i++){
-            
+         
             switch (args[i]){
+                
                 case "-i":
                 case "--input":
                     input = args[i+1]; 
@@ -51,7 +54,7 @@ public class PracticaAVconv {
                 case "--sepia":
                     unZip.setSep(true);
                     break;
-                case "--bn":
+                case "--bn":                    
                     unZip.setBN(true);
                     break;
             }        
@@ -61,7 +64,8 @@ public class PracticaAVconv {
         
         System.out.println("----- PROJECTE PRÀCTIQUES -----");
         
-        do{
+        do{ 
+            
             //Unzip and convert to JPG if necessary
             ok = unZip.unZipIt(input+".zip", output, fps);
 

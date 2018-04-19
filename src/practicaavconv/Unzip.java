@@ -106,8 +106,9 @@ public class Unzip
             zis.close();
 
             playList(images, fps);
-
+            
             System.out.println("Done");
+        
             
             return true;
     		
@@ -123,23 +124,23 @@ public class Unzip
         JLabel jlabel = new JLabel();
         
         frame.setVisible(true);
-        
+        int i = 0;
         for(BufferedImage img : images){
-
+                
                 long time_before = System.currentTimeMillis();
                 
                 jlabel.setIcon(new ImageIcon(img));
                 frame.getContentPane().add(jlabel);
                 frame.pack();
-                
-                /*long time_after = System.currentTimeMillis();
+             
+                long time_after = System.currentTimeMillis();
                 int ms_sleep = (1000/fps) - (int) (time_after - time_before);
                 try {
                     if(ms_sleep > 0)
                         Thread.sleep(ms_sleep);
                 } catch(InterruptedException e) {
                     
-                }*/
+                }
         }
     }
     
