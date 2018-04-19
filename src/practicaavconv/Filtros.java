@@ -8,12 +8,7 @@ import java.awt.image.BufferedImage;
  * @author Ivan Toro and David Muntal
  */
 public class Filtros {
-    public static final int[][] filter9 = {{1, 1, 1},
-                                           {1, 1, 1},
-                                           {1, 1, 1}};
-    public static final int[][] filter16 = {{1, 2, 1},
-                                            {2, 4, 2},
-                                            {1, 2, 1}};
+
     /**
      * Funcion que devuelve la imagen pasada con el filtro de blanco y negro
      * 
@@ -142,13 +137,26 @@ public class Filtros {
      * @return 
      */
     public BufferedImage aveFilter(BufferedImage img, int valor) {
+        int[][] myFilter = new int[valor][valor];
+
+        if (valor%2 == 0){ //si es par, lo dejo en impar
+            valor-=1;
+        }
         
+        for (int x=0; x< valor; x++){ //creo el filtro con el tamaño que me pasan
+            for(int y= 0; y<valor; y++){
+                myFilter[x][y]=1;                
+            }
+        }
+        
+        int distancia = valor/2;
         int width = img.getWidth();
         int height = img.getHeight();
         BufferedImage res = new BufferedImage(width, height, BufferedImage.TYPE_3BYTE_BGR);
-        for(int i = 1; i + 1< height; i++) {
-            for(int j = 1; j +1 < width; j++) {
-                Color tempColor = getAverageValue(img, i, j, filter9);
+        
+        for(int i = distancia; i + distancia< height; i++) {
+            for(int j = distancia; j +distancia < width; j++) {
+                Color tempColor = getAverageValue(img, i, j, myFilter, distancia);
                     res.setRGB(j, i, tempColor.getRGB());
             }
         }
@@ -156,15 +164,15 @@ public class Filtros {
     }
     
    
-    private Color getAverageValue(BufferedImage img, int y, int x, int[][] filter) {
+    private Color getAverageValue(BufferedImage img, int y, int x, int[][] filter, int dis) {
         int r = 0, g = 0, b = 0;
-        for (int j = -1; j <= 1; j++) {
-            for (int k = -1; k <= 1; k++) {
+        for (int j = -dis; j <= dis; j++) {
+            for (int k = -dis; k <= dis; k++) {
                 Color cr = new Color(img.getRGB(x + k, y + j));
                      int crr   =cr.getRed();
-                r += (filter[1 + j][1 + k] * (crr));
-                g += (filter[1 + j][1 + k] * (new Color(img.getRGB(x + k, y + j))).getGreen());
-                b += (filter[1 + j][1 + k] * (new Color(img.getRGB(x + k, y + j))).getBlue());
+                r += (filter[dis + j][dis + k] * (crr));
+                g += (filter[dis + j][dis + k] * (new Color(img.getRGB(x + k, y + j))).getGreen());
+                b += (filter[dis + j][dis + k] * (new Color(img.getRGB(x + k, y + j))).getBlue());
             }
 
         }
