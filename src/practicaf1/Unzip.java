@@ -6,8 +6,11 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 import java.awt.Color;
+import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
+import java.awt.image.WritableRaster;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import javax.imageio.ImageIO;
@@ -19,10 +22,10 @@ import javax.swing.JLabel;
  *
  * @author Ivan Toro and David Muntal
  */
-public class Unzip
-{    
+public class Unzip {
+
     private boolean neg;
-    private boolean sep; 
+    private boolean sep;
     private boolean bn;
     private int bin;
     private int ave;
@@ -33,9 +36,14 @@ public class Unzip
     private int quality;
     boolean batch;
 
-    public Unzip(){
+    static long T_ini = 0L;
+    static long T_fin = 0L;
+    static long N_coincidencias;
+    static ArrayList<ImgContainer> list_teselas = new ArrayList();
+
+    public Unzip() {
         this.neg = false;
-        this.sep = false; 
+        this.sep = false;
         this.bn = false;
         this.bin = 0;
         this.ave = 0;
@@ -46,14 +54,14 @@ public class Unzip
         this.quality = 0;
         this.batch = false;
     }
-    
-    public boolean unZipIt(String zipFile, String outputFolder, int fps, boolean encode, boolean decode){
+
+    public boolean unZipIt(String zipFile, String outputFolder, int fps, boolean encode, boolean decode) {
 
         byte[] buffer = new byte[1024];
-        
+
         ArrayList<BufferedImage> images = new ArrayList<>();
 
-        try{    		
+        try {
             //get the zip file content
             ZipInputStream zis = new ZipInputStream(new FileInputStream(zipFile));
             //get the zipped file list entry
@@ -61,35 +69,34 @@ public class Unzip
 
             //create output directory if not exists
             File folder = new File(outputFolder);
-            if(!folder.exists()){
-                    folder.mkdir();
+            if (!folder.exists()) {
+                folder.mkdir();
             }
-                        
-             //unzip the files  
-            while(ze!=null){
+
+            //unzip the files  
+            while (ze != null) {
 
                 String current = ze.getName();
 
-                String[] name = current.split("[.]");  
+                String[] name = current.split("[.]");
                 //System.out.println(ze.getName());
-                String fileName = name[0]; 
-                String extension = name[1]; 
+                String fileName = name[0];
+                String extension = name[1];
 
                 File newFile = new File(outputFolder + File.separator + current);
                 new File(newFile.getParent()).mkdirs();
 
-                FileOutputStream fos = new FileOutputStream(newFile);       
+                FileOutputStream fos = new FileOutputStream(newFile);
 
                 int len;
                 while ((len = zis.read(buffer)) > 0) {
                     fos.write(buffer, 0, len);
                 }
 
-                fos.close();   
+                fos.close();
 
-              //if extension not jpg, convert
-
-              if (extension.equals("png") || extension.equals("gif") || extension.equals("bmp") || extension.equals("jpeg") || extension.equals("jpg")){
+                //if extension not jpg, convert
+                if (extension.equals("png") || extension.equals("gif") || extension.equals("bmp") || extension.equals("jpeg") || extension.equals("jpg")) {
 
                     BufferedImage bufferedImage = ImageIO.read(new File(outputFolder + File.separator + current));
 
@@ -99,111 +106,361 @@ public class Unzip
 
                     // get filtered image
                     BufferedImage filteredImage = this.getFilteredImage(newBufferedImage);
-                 
+
                     images.add(filteredImage);
-                 
+
                     // write to jpeg file
-                    ImageIO.write(filteredImage, "jpeg", new File(outputFolder + File.separator + fileName+".jpeg"));
+                    ImageIO.write(filteredImage, "jpeg", new File(outputFolder + File.separator + fileName + ".jpeg"));
 
                     // delete the original file unziped
                     newFile.delete();
-                 }
+                }
 
                 ze = zis.getNextEntry();
             }
-    	
+
             zis.closeEntry();
             zis.close();
 
             //Reprodueix les imatges amb un fps concret
-            playList(images, fps);
-            
-            if(encode && !decode){
+            //playList(images, fps);
+            if (encode && !decode) {
                 this.encode(images);
-            } else if(!encode && decode){
+            } else if (!encode && decode) {
                 this.decode(images);
-            } else if(!encode && !decode){
+            } else if (!encode && !decode) {
                 this.encodedecode(images);
             }
-            
+
             //System.out.println("Done");
-          
             return true;
-    		
-        }catch(IOException ex){
+
+        } catch (IOException ex) {
             return false;
         }
-    }    
-    
-    public void encode(ArrayList<BufferedImage> images){
-        
     }
-     
-    public void decode(ArrayList<BufferedImage> images){
-    
+
+    public void encode(ArrayList<BufferedImage> images) {
+
+        ArrayList<ImgContainer> images_encode = new ArrayList<ImgContainer>();
+/*
+        for (int i = 0; i < images.size() - 1; i++) {
+            ImgContainer img_origen = new ImgContainer(ImgContainer.copia(images.get(i)), "Origen");
+            ImgContainer img_final = new ImgContainer(ImgContainer.copia(images.get(i + 1)), "Final");
+
+            images_encode.add(getEncode(img_origen, img_final));
+        }
+        */
+        ImgContainer img_origen = new ImgContainer(ImgContainer.copia(images.get(0)), "Origen");
+        ImgContainer img_final = new ImgContainer(ImgContainer.copia(images.get(0 + 1)), "Final");
+
+        images_encode.add(getEncode(img_origen, img_final));
+
+        File outputFile = new File("./encode.jpg");
+        try {
+        FileOutputStream fos = new FileOutputStream(outputFile);
+        ImageIO.write(images_encode.get(0).getBufImg(), "jpeg", fos);
+        fos.close();
+        } catch (FileNotFoundException e1) {
+        e1.printStackTrace();
+        } catch (IOException e1) {
+        e1.printStackTrace();
+        }
+
     }
-    
-    public void encodedecode(ArrayList<BufferedImage> images){
-    
+
+    public void decode(ArrayList<BufferedImage> images) {
+
     }
-        
+
+    public void encodedecode(ArrayList<BufferedImage> images) {
+
+    }
+
+    public ImgContainer getEncode(ImgContainer base, ImgContainer destino) {
+        T_ini = System.nanoTime();
+        teselar(base);
+        ImgContainer result = new ImgContainer(ImgContainer.copia(destino.getBufImg()), "resultat");
+        ImgContainer result_track = new ImgContainer(ImgContainer.copia(destino.getBufImg()), "proces");
+        int id_tesela = 0;
+        int n_teselas = list_teselas.size();
+        long n_coincidencias = 0L;
+        for (ImgContainer tes : list_teselas) {
+            BufferedImage tesela = tes.getBufImg();
+            int tes_x0 = tes.getX0();
+            int tes_y0 = tes.getY0();
+            System.out.print(tes.getName() + "/" + n_teselas + ": ");
+            BufferedImage imagen = result.getBufImg();
+            WritableRaster imagen_wras = (WritableRaster) imagen.getData();
+            BufferedImage imagen_track = result_track.getBufImg();
+
+            int alto_tesela = tesela.getHeight();
+            int ancho_tesela = tesela.getWidth();
+            int alto_imagen = imagen.getHeight();
+            int ancho_imagen = imagen.getWidth();
+
+            float rt = 0.0F;
+            float gt = 0.0F;
+            float bt = 0.0F;
+            int n = alto_tesela * ancho_tesela;
+            for (int i = 0; i < alto_tesela; i++) {
+                for (int j = 0; j < ancho_tesela; j++) {
+                    Color c = new Color(tesela.getRGB(j, i));
+                    rt += c.getRed();
+                    gt += c.getGreen();
+                    bt += c.getBlue();
+                }
+            }
+            rt /= n;
+            gt /= n;
+            bt /= n;
+
+            boolean flag = false;
+
+            int output_counter = 0;
+            for (int j = tes_y0 - this.getSeek(); j <= tes_y0 + this.getSeek(); j++) {
+                for (int i = tes_x0 - this.getSeek(); i <= tes_x0 + this.getSeek(); i++) {
+                    if (i >= 0) {
+                        if (i <= ancho_imagen - ancho_tesela) {
+                            if (j >= 0) {
+                                if (j <= alto_imagen - alto_tesela) {
+                                    WritableRaster tesela_destino_wras = (WritableRaster) imagen_wras.createChild(i, j, ancho_tesela,
+                                            alto_tesela, 0, 0, null);
+
+                                    BufferedImage tesela_destino = new BufferedImage(imagen.getColorModel(), tesela_destino_wras,
+                                            imagen.getColorModel().isAlphaPremultiplied(), null);
+                                    float rtd = 0.0F;
+                                    float gtd = 0.0F;
+                                    float btd = 0.0F;
+                                    int nd = alto_tesela * ancho_tesela;
+                                    for (int h = 0; h < alto_tesela; h++) {
+                                        for (int p = 0; p < ancho_tesela; p++) {
+                                            Color cd = new Color(tesela_destino.getRGB(p, h));
+                                            rtd += cd.getRed();
+                                            gtd += cd.getGreen();
+                                            btd += cd.getBlue();
+                                        }
+                                    }
+                                    rtd /= nd;
+                                    gtd /= nd;
+                                    btd /= nd;
+                                    double valor = funcioComparadora(rt, gt, bt, rtd, gtd, btd);
+                                    if (valor < this.getQuality()) {
+                                        n_coincidencias += 1L;
+
+                                        //Blanco
+                                        for (int h = j; h < j + alto_tesela; h++) {
+                                            for (int p = i; p < i + ancho_tesela; p++) {
+                                                imagen.setRGB(p, h, new Color(255, 255, 255).getRGB());
+                                            }
+                                        }
+                                        
+                                        //imagen = restaTesela(imagen, tesela, i, j);
+
+                                        //va.dm.addRow(new Object[] { Integer.valueOf(id_tesela), Integer.valueOf(tes_x0), Integer.valueOf(tes_y0), Integer.valueOf(i), Integer.valueOf(j), Double.valueOf(valor) });
+                                        System.out.print(tes_x0 + "," + tes_y0 + "   " + valor);
+
+                                        result = new ImgContainer(ImgContainer.copia(imagen), "Final");
+
+                                        //result_track = new ImgContainer(ImgContainer.copia(dibujarTesela(imagen_track, tes)), "Proces");
+                                        break;
+                                    }
+                                    if (this.getSeek() == 0) {
+                                        System.out.print(".");
+                                    } else if (this.getSeek() < 10) {
+                                        if (output_counter % this.getSeek() == 0) {
+                                            System.out.print(".");
+                                        }
+                                    } else if (Math.sqrt(output_counter) % this.getSeek() == 0.0D) {
+                                        System.out.print(".");
+                                    }
+                                    output_counter++;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            id_tesela++;
+            System.out.println();
+        }
+        N_coincidencias = n_coincidencias;
+        T_fin = System.nanoTime();
+        return result;
+    }
+
+    public static BufferedImage restaTesela(BufferedImage img, BufferedImage tes, int tes_x0, int tes_y0) {
+        int alto_tesela = tes.getHeight();
+        int ancho_tesela = tes.getWidth();
+        for (int i = 0; i < alto_tesela; i++) {
+            for (int j = 0; j < ancho_tesela; j++) {
+                Color color_tes = new Color(tes.getRGB(i, j));
+                Color color_img = new Color(img.getRGB(i + tes_x0, j + tes_y0));
+                int[] ct = {color_tes.getRed(), color_tes.getGreen(), color_tes.getBlue()};
+                int[] ci = {color_img.getRed(), color_img.getGreen(), color_img.getBlue()};
+                int[] cdiff = new int[3];
+                for (int k = 0; k < 3; k++) {
+                    ci[k] -= ct[k];
+                    if (cdiff[k] >= 0) {
+                        cdiff[k] = ((int) (cdiff[k] / 2.0D));
+                    } else {
+                        cdiff[k] = (-cdiff[k]);
+                        cdiff[k] = ((int) (cdiff[k] / 2.0D));
+                        cdiff[k] += 128;
+                    }
+                }
+                img.setRGB(i + tes_x0, j + tes_y0, new Color(cdiff[0], cdiff[1], cdiff[2]).getRGB());
+            }
+        }
+        return img;
+    }
+
+    private static double funcioComparadora(double x1, double x2, double x3, double y1, double y2, double y3) {
+        return 10.0D * (Math.sqrt(x1 - y1) + Math.sqrt(x2 - y2) + Math.sqrt(x3 - y3));
+    }
+
+    public BufferedImage dibujarTeselas(BufferedImage bi) {
+        int altura = bi.getHeight();
+        int ancho = bi.getWidth();
+
+        int y_teselas = this.size_x;
+        if (this.size_y > 0) {
+            y_teselas = this.size_y;
+        }
+        double tamx = ancho / this.size_x;
+        double tamy = altura / y_teselas;
+
+        Graphics2D g2d = bi.createGraphics();
+
+        g2d.setColor(Color.BLUE);
+        for (int i = 0; i < this.size_x; i++) {
+            for (int j = 0; j < y_teselas; j++) {
+                if (i * tamx + tamx <= ancho) {
+                    if (i * tamy + tamy <= altura) {
+                        g2d.drawLine((int) (i * tamx), 0, (int) (i * tamx), altura);
+                        g2d.drawLine(0, (int) (j * tamy), ancho, (int) (j * tamy));
+                    }
+                }
+            }
+        }
+        g2d.dispose();
+        return bi;
+    }
+
+    public static BufferedImage dibujarTesela(BufferedImage bi, ImgContainer tes) {
+        int tamx = tes.getBufImg().getWidth();
+        int tamy = tes.getBufImg().getHeight();
+        int x0 = tes.getX0();
+        int y0 = tes.getY0();
+        for (int i = x0; i < x0 + tamx; i++) {
+            for (int j = y0; j < y0 + tamy; j++) {
+                int pixelInt = bi.getRGB(i, j);
+                int r = new Color(pixelInt).getRed();
+                int g = new Color(pixelInt).getGreen();
+                int b = new Color(pixelInt).getBlue();
+                bi.setRGB(i, j, new Color(r / 2, g / 2, b / 2).getRGB());
+            }
+        }
+        return bi;
+    }
+
+    public ArrayList teselar(ImgContainer x) {
+        list_teselas = new ArrayList();
+        BufferedImage bi = x.getBufImg();
+        int altura = bi.getHeight();
+        int ancho = bi.getWidth();
+
+        int y_teselas = this.size_x;
+        if (this.size_y > 0) {
+            y_teselas = this.size_y;
+        }
+        double tamx = ancho / this.size_x;
+        double tamy = altura / y_teselas;
+
+        int h = 0;
+        WritableRaster wras = (WritableRaster) bi.getData();
+        for (int i = 0; i < this.size_x; i++) {
+            for (int j = 0; j < y_teselas; j++) {
+                if (i * tamx + tamx <= ancho) {
+                    if (j * tamy + tamy <= altura) {
+                        WritableRaster tesela = (WritableRaster) wras.createChild((int) (i * tamx), (int) (j * tamy),
+                                (int) tamx, (int) tamy, 0, 0, null);
+                        BufferedImage imagen = new BufferedImage(bi.getColorModel(), tesela,
+                                bi.getColorModel().isAlphaPremultiplied(), null);
+                        ImgContainer tes = new ImgContainer(imagen, Integer.toString(h));
+                        tes.setX0((int) (i * tamx));
+                        tes.setY0((int) (j * tamy));
+                        list_teselas.add(tes);
+                        h++;
+                    }
+                }
+            }
+        }
+        return list_teselas;
+    }
+
     /**
      * Reprodueix les imatges en un Jframe
-     * 
+     *
      * @param images
-     * @param fps 
+     * @param fps
      */
-    private void playList(ArrayList<BufferedImage> images, int fps){
-    
-        
+    private void playList(ArrayList<BufferedImage> images, int fps) {
+
         JFrame frame = new JFrame();
         JLabel jlabel = new JLabel();
-        
+
         frame.setVisible(true);
-        for(BufferedImage img : images){
-                
-                long t1 = System.currentTimeMillis();
-                
-                jlabel.setIcon(new ImageIcon(img));
-                frame.getContentPane().add(jlabel);
-                frame.pack();
-             
-                long t2 = System.currentTimeMillis();
-                int miliseconds = (1000/fps) - (int) (t2 - t1);
-                try {
-                    if(miliseconds > 0)
-                        Thread.sleep(miliseconds);
-                } catch(InterruptedException e) {
-                    
+        for (BufferedImage img : images) {
+
+            long t1 = System.currentTimeMillis();
+
+            jlabel.setIcon(new ImageIcon(img));
+            frame.getContentPane().add(jlabel);
+            frame.pack();
+
+            long t2 = System.currentTimeMillis();
+            int miliseconds = (1000 / fps) - (int) (t2 - t1);
+            try {
+                if (miliseconds > 0) {
+                    Thread.sleep(miliseconds);
                 }
+            } catch (InterruptedException e) {
+
+            }
         }
     }
-    
+
     /**
      * Devuelve las imagenes filtradas segun los parametros
-     * 
+     *
      * @param newBufferedImage
-     * @return 
+     * @return
      */
     private BufferedImage getFilteredImage(BufferedImage newBufferedImage) {
-            
-            Filtros filter = new Filtros();
-            BufferedImage imgFiltered = newBufferedImage;
-            
-            if(isNeg())
-                imgFiltered = filter.negFilter(imgFiltered);
-            if(isSep())
-                imgFiltered = filter.sepFilter(imgFiltered);
-            if(isBN())
-                imgFiltered = filter.BNFilter(imgFiltered);            
-            if(getBin()!= 0)
-                imgFiltered = filter.binFilter(imgFiltered, getBin());
-            if(getAve()!= 0)
-                imgFiltered = filter.aveFilter(imgFiltered, getAve());            
-            
-            return imgFiltered;
+
+        Filtros filter = new Filtros();
+        BufferedImage imgFiltered = newBufferedImage;
+
+        if (isNeg()) {
+            imgFiltered = filter.negFilter(imgFiltered);
+        }
+        if (isSep()) {
+            imgFiltered = filter.sepFilter(imgFiltered);
+        }
+        if (isBN()) {
+            imgFiltered = filter.BNFilter(imgFiltered);
+        }
+        if (getBin() != 0) {
+            imgFiltered = filter.binFilter(imgFiltered, getBin());
+        }
+        if (getAve() != 0) {
+            imgFiltered = filter.aveFilter(imgFiltered, getAve());
+        }
+
+        return imgFiltered;
     }
-    
+
     public boolean isNeg() {
         return neg;
     }
@@ -227,7 +484,7 @@ public class Unzip
     public void setBN(boolean bn) {
         this.bn = bn;
     }
-    
+
     public int getBin() {
         return bin;
     }
@@ -239,11 +496,11 @@ public class Unzip
     public int getAve() {
         return ave;
     }
-    
+
     public void setAve(int ave) {
         this.ave = ave;
     }
-    
+
     public boolean isBn() {
         return bn;
     }
