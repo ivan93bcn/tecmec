@@ -248,14 +248,20 @@ public class Unzip {
                                     if (valor < this.getQuality()) {
                                         n_coincidencias += 1L;
 
-                                        //Blanco
-                                        for (int h = j; h < j + alto_tesela; h++) {
+                                        //Blanco 
+                                        /*for (int h = j; h < j + alto_tesela; h++) {
                                             for (int p = i; p < i + ancho_tesela; p++) {
                                                 imagen.setRGB(p, h, new Color(255, 255, 255).getRGB());
                                             }
                                         }
+                                        */
                                         
-                                        //imagen = restaTesela(imagen, tesela, i, j);
+                                        //Suave
+                                        for (int h = j; h < j + alto_tesela; h++) {
+                                            for (int p = i; p < i + ancho_tesela; p++) {
+                                                imagen.setRGB(p, h, new Color((int)rtd, (int)gtd, (int)btd).getRGB());
+                                            }
+                                        }
 
                                         //va.dm.addRow(new Object[] { Integer.valueOf(id_tesela), Integer.valueOf(tes_x0), Integer.valueOf(tes_y0), Integer.valueOf(i), Integer.valueOf(j), Double.valueOf(valor) });
                                         System.out.print(tes_x0 + "," + tes_y0 + "   " + valor);
@@ -289,31 +295,7 @@ public class Unzip {
         return result;
     }
 
-    public static BufferedImage restaTesela(BufferedImage img, BufferedImage tes, int tes_x0, int tes_y0) {
-        int alto_tesela = tes.getHeight();
-        int ancho_tesela = tes.getWidth();
-        for (int i = 0; i < alto_tesela; i++) {
-            for (int j = 0; j < ancho_tesela; j++) {
-                Color color_tes = new Color(tes.getRGB(i, j));
-                Color color_img = new Color(img.getRGB(i + tes_x0, j + tes_y0));
-                int[] ct = {color_tes.getRed(), color_tes.getGreen(), color_tes.getBlue()};
-                int[] ci = {color_img.getRed(), color_img.getGreen(), color_img.getBlue()};
-                int[] cdiff = new int[3];
-                for (int k = 0; k < 3; k++) {
-                    ci[k] -= ct[k];
-                    if (cdiff[k] >= 0) {
-                        cdiff[k] = ((int) (cdiff[k] / 2.0D));
-                    } else {
-                        cdiff[k] = (-cdiff[k]);
-                        cdiff[k] = ((int) (cdiff[k] / 2.0D));
-                        cdiff[k] += 128;
-                    }
-                }
-                img.setRGB(i + tes_x0, j + tes_y0, new Color(cdiff[0], cdiff[1], cdiff[2]).getRGB());
-            }
-        }
-        return img;
-    }
+   
 
     private static double funcioComparadora(double x1, double x2, double x3, double y1, double y2, double y3) {
         return 10.0D * (Math.sqrt(x1 - y1) + Math.sqrt(x2 - y2) + Math.sqrt(x3 - y3));
