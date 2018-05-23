@@ -9,14 +9,18 @@ import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.awt.image.WritableRaster;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+
+import javax.swing.table.DefaultTableModel;
 
 /**
  *
@@ -35,11 +39,14 @@ public class Unzip {
     private int size_y;
     private int quality;
     boolean batch;
-
+    
     static long T_ini = 0L;
     static long T_fin = 0L;
     static long N_coincidencias;
     static ArrayList<ImgContainer> list_teselas = new ArrayList();
+    
+    DefaultTableModel dm;  
+    ArrayList<String> lineaComp = new ArrayList();
 
     public Unzip() {
         this.neg = false;
@@ -53,6 +60,10 @@ public class Unzip {
         this.size_y = 0;
         this.quality = 0;
         this.batch = false;
+        
+        this.dm = new DefaultTableModel();
+        String[] columnNames = {"id_tesela_base", "x_base", "y_base", "x_destino", "y_destino", "valor_comp"};
+        this.dm.setColumnIdentifiers(columnNames);
     }
 
     public boolean unZipIt(String zipFile, String outputFolder, int fps, boolean encode, boolean decode) {
@@ -185,6 +196,15 @@ public class Unzip {
         int id_tesela = 0;
         int n_teselas = list_teselas.size();
         long n_coincidencias = 0L;
+        
+    
+   
+     
+        
+        
+        
+        
+        
         for (ImgContainer tes : list_teselas) {
             BufferedImage tesela = tes.getBufImg();
             int tes_x0 = tes.getX0();
@@ -263,7 +283,10 @@ public class Unzip {
                                             }
                                         }
 
-                                        //va.dm.addRow(new Object[] { Integer.valueOf(id_tesela), Integer.valueOf(tes_x0), Integer.valueOf(tes_y0), Integer.valueOf(i), Integer.valueOf(j), Double.valueOf(valor) });
+                                        this.dm.addRow(new Object[] { Integer.valueOf(id_tesela), Integer.valueOf(tes_x0), Integer.valueOf(tes_y0), Integer.valueOf(i), Integer.valueOf(j), Double.valueOf(valor) });
+                                        
+                                        this.lineaComp.add(String.valueOf(id_tesela)+", "+String.valueOf(tes_x0)+", "+String.valueOf(tes_y0)+", "+String.valueOf(i)+", "+String.valueOf(j)+", "+String.valueOf(valor));
+                                                         
                                         System.out.print(tes_x0 + "," + tes_y0 + "   " + valor);
 
                                         result = new ImgContainer(ImgContainer.copia(imagen), "Final");
@@ -292,6 +315,28 @@ public class Unzip {
         }
         N_coincidencias = n_coincidencias;
         T_fin = System.nanoTime();
+             
+        //creo el archivo donde guardo mis detalles de compresion para poder hacer el DECODE    
+        try{
+            File compression = new File("./compression.txt");
+            if(!compression.exists()){
+                compression.createNewFile();
+            }
+            FileWriter fw = new FileWriter(compression.getAbsoluteFile());
+            BufferedWriter bw = new BufferedWriter(fw);
+                for (String linea : lineaComp){ 
+                    bw.write(linea);
+                    bw.newLine();
+                }
+
+            bw.close();
+            fw.close();
+        }
+        catch (Exception ex)
+        {
+            ex.printStackTrace();
+        }
+      
         return result;
     }
 
