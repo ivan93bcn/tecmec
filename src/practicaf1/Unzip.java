@@ -45,8 +45,10 @@ public class Unzip {
     static long N_coincidencias;
     static ArrayList<ImgContainer> list_teselas = new ArrayList();
     
-    DefaultTableModel dm;  
-    ArrayList<String> lineaComp = new ArrayList();
+    /*DefaultTableModel dm;  
+    ArrayList<String> lineaComp = new ArrayList();*/
+    
+    static ArrayList<Tesela> arrayTeselas = new ArrayList<Tesela>();
 
     public Unzip() {
         this.neg = false;
@@ -61,9 +63,9 @@ public class Unzip {
         this.quality = 0;
         this.batch = false;
         
-        this.dm = new DefaultTableModel();
+        /*this.dm = new DefaultTableModel();
         String[] columnNames = {"id_tesela_base", "x_base", "y_base", "x_destino", "y_destino", "valor_comp"};
-        this.dm.setColumnIdentifiers(columnNames);
+        this.dm.setColumnIdentifiers(columnNames);*/
     }
 
     public boolean unZipIt(String zipFile, String outputFolder, int fps, boolean encode, boolean decode) {
@@ -197,14 +199,6 @@ public class Unzip {
         int n_teselas = list_teselas.size();
         long n_coincidencias = 0L;
         
-    
-   
-     
-        
-        
-        
-        
-        
         for (ImgContainer tes : list_teselas) {
             BufferedImage tesela = tes.getBufImg();
             int tes_x0 = tes.getX0();
@@ -282,11 +276,14 @@ public class Unzip {
                                                 imagen.setRGB(p, h, new Color((int)rtd, (int)gtd, (int)btd).getRGB());
                                             }
                                         }
-
-                                        this.dm.addRow(new Object[] { Integer.valueOf(id_tesela), Integer.valueOf(tes_x0), Integer.valueOf(tes_y0), Integer.valueOf(i), Integer.valueOf(j), Double.valueOf(valor) });
+                                        
+                                        if(!tesExists(arrayTeselas, id_tesela)){
+                                            arrayTeselas.add(new Tesela(id_tesela,tes_x0,tes_y0,i,j,valor));
+                                        }
+                                        /*this.dm.addRow();
                                         
                                         this.lineaComp.add(String.valueOf(id_tesela)+", "+String.valueOf(tes_x0)+", "+String.valueOf(tes_y0)+", "+String.valueOf(i)+", "+String.valueOf(j)+", "+String.valueOf(valor));
-                                                         
+                                        */              
                                         System.out.print(tes_x0 + "," + tes_y0 + "   " + valor);
 
                                         result = new ImgContainer(ImgContainer.copia(imagen), "Final");
@@ -315,7 +312,14 @@ public class Unzip {
         }
         N_coincidencias = n_coincidencias;
         T_fin = System.nanoTime();
-             
+        
+        //Llamamos a la función que guarda los resultados en un fichero
+        saveResults(arrayTeselas);
+      
+        return result;
+    }
+
+    public void saveResults(ArrayList<Tesela> teselas){
         //creo el archivo donde guardo mis detalles de compresion para poder hacer el DECODE    
         try{
             File compression = new File("./compression.txt");
@@ -324,8 +328,8 @@ public class Unzip {
             }
             FileWriter fw = new FileWriter(compression.getAbsoluteFile());
             BufferedWriter bw = new BufferedWriter(fw);
-                for (String linea : lineaComp){ 
-                    bw.write(linea);
+                for (Tesela tesela : teselas){ 
+                    bw.write(tesela.toString());
                     bw.newLine();
                 }
 
@@ -336,12 +340,17 @@ public class Unzip {
         {
             ex.printStackTrace();
         }
-      
-        return result;
     }
 
-   
-
+    public boolean tesExists(ArrayList<Tesela> arrayTeselas, int id_tesela){    
+        for(Tesela tes: arrayTeselas){
+            if(tes.getId_tesela_base() == id_tesela){
+                return true;
+            }
+        } 
+        return false;
+    }
+    
     private static double funcioComparadora(double x1, double x2, double x3, double y1, double y2, double y3) {
         return 10.0D * (Math.sqrt(x1 - y1) + Math.sqrt(x2 - y2) + Math.sqrt(x3 - y3));
     }
