@@ -180,22 +180,22 @@ public class Unzip {
             
             
             int x = 0, xf = 0;
-            int cont1=0;
+            int contNombre=0;
             
             int correctFinals = (images_origenes.size()-1) * this.gop; //imagen origen de inicio y de final
             int diff =  images_finales.size() - correctFinals;
 
             for(int i = 0; i < images_origenes.size(); i++){
-                cont1++;
+                contNombre++;
                 if(i == images_origenes.size() - 1){
                     
                     //System.out.println("origen: " + i);
                     for(int j = correctFinals; j < images_finales.size(); j++){
                             String nombreArchivo = "";
-                        if (cont1<10){
-                             nombreArchivo = "./Cubo0"+cont1+".jpg";
+                        if (contNombre<10){
+                             nombreArchivo = "./Cubo0"+contNombre+".jpg";
                         }else{
-                             nombreArchivo = "./Cubo"+cont1+".jpg";
+                             nombreArchivo = "./Cubo"+contNombre+".jpg";
                         }
                         File outputFile = new File(nombreArchivo);
                         FileOutputStream fos = new FileOutputStream(outputFile);
@@ -204,15 +204,15 @@ public class Unzip {
                         System.out.println("origen: " + i + " final: " + j);
                         ImageIO.write(image_code.getBufImg(), "jpeg", fos);
                         fos.close();
-                        cont1++;
+                        contNombre++;
                     }
                 } else{
                     for(int j = 0; j < this.gop; j++){
                         String nombreArchivo = "";
-                        if (cont1<10){
-                             nombreArchivo = "./Cubo0"+cont1+".jpg";
+                        if (contNombre<10){
+                             nombreArchivo = "./Cubo0"+contNombre+".jpg";
                         }else{
-                             nombreArchivo = "./Cubo"+cont1+".jpg";
+                             nombreArchivo = "./Cubo"+contNombre+".jpg";
                         }
                         File outputFile = new File(nombreArchivo);
                         FileOutputStream fos = new FileOutputStream(outputFile);
@@ -222,7 +222,7 @@ public class Unzip {
                         ImageIO.write(image_code.getBufImg(), "jpeg", fos);
                         fos.close();
                         x += 1;
-                        cont1++;
+                        contNombre++;
                     }
                 }
             }
@@ -480,9 +480,10 @@ public class Unzip {
             FileWriter fw = new FileWriter(compression.getAbsoluteFile());
             BufferedWriter bw = new BufferedWriter(fw);
              
-            
+            int mycont=0;
             for (ArrayList<Tesela> arrayT : teselas){
-                bw.write("Foto,0");
+                mycont++;
+                bw.write("Foto,"+mycont);
                 bw.newLine();
                 for (Tesela tesela : arrayT){ 
                     bw.write(tesela.toString());
@@ -490,6 +491,11 @@ public class Unzip {
                 }
                 bw.write("Fin"); //indica el final de los datos de esa imagen
                 bw.newLine();
+                
+                if (mycont == this.gop){
+                    mycont++;
+                }
+            
             }
             bw.close();
             fw.close();
