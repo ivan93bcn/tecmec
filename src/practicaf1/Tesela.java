@@ -76,6 +76,6 @@ public class Tesela {
     
     @Override
     public String toString(){
-        return this.id_tesela_base + ", " + this.x_base + ", " + this.y_base + ", " + this.x_destino + ", " + this.y_destino + ", " + this.valor_comp;
+        return this.id_tesela_base + "," + this.x_base + "," + this.y_base + "," + this.x_destino + "," + this.y_destino + "," + this.valor_comp;
     }
 }
