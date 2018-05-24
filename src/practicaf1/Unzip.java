@@ -18,6 +18,8 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.zip.ZipOutputStream;
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
 import javax.swing.JFrame;
@@ -50,9 +52,7 @@ public class Unzip {
     static ArrayList<ImgContainer> list_teselas = new ArrayList(); 
     
     static ArrayList<Tesela> arrayTeselas = new ArrayList<Tesela>();
-    
-    static ArrayList<Tesela> arrayTeselasDecode = new ArrayList<Tesela>();
-    
+        
     static ArrayList<ArrayList<Tesela>> finalData = new ArrayList<ArrayList<Tesela>>();
         
     public Unzip() {
@@ -146,8 +146,8 @@ public class Unzip {
             if (encode && !decode) {
                 this.encode(images);
             } else if (!encode && decode) {
-                this.decode(images);
-            } else if (!encode && !decode) {
+                this.decode();
+            } else if (encode && decode) {
                 this.encodedecode(images);
             }
 
@@ -186,19 +186,23 @@ public class Unzip {
             int diff =  images_finales.size() - correctFinals;
 
             for(int i = 0; i < images_origenes.size(); i++){
+                String nombreArchivo = "";
+                nombreArchivo = "codification/Cubo0"+contNombre+".jpeg";
+                File outputFile = new File(nombreArchivo);
+                FileOutputStream fos = new FileOutputStream(outputFile);
+                ImageIO.write(images_origenes.get(i).getBufImg(), "jpeg", fos);
                 contNombre++;
                 if(i == images_origenes.size() - 1){
                     
                     //System.out.println("origen: " + i);
                     for(int j = correctFinals; j < images_finales.size(); j++){
-                            String nombreArchivo = "";
                         if (contNombre<10){
-                             nombreArchivo = "./Cubo0"+contNombre+".jpg";
+                             nombreArchivo = "codification/Cubo0"+contNombre+".jpeg";
                         }else{
-                             nombreArchivo = "./Cubo"+contNombre+".jpg";
+                             nombreArchivo = "codification/Cubo"+contNombre+".jpeg";
                         }
-                        File outputFile = new File(nombreArchivo);
-                        FileOutputStream fos = new FileOutputStream(outputFile);
+                        outputFile = new File(nombreArchivo);
+                        fos = new FileOutputStream(outputFile);
                         
                         ImgContainer image_code = getEncode(images_origenes.get(i), images_finales.get(j));
                         System.out.println("origen: " + i + " final: " + j);
@@ -208,14 +212,13 @@ public class Unzip {
                     }
                 } else{
                     for(int j = 0; j < this.gop; j++){
-                        String nombreArchivo = "";
                         if (contNombre<10){
-                             nombreArchivo = "./Cubo0"+contNombre+".jpg";
+                             nombreArchivo = "codification/Cubo0"+contNombre+".jpeg";
                         }else{
-                             nombreArchivo = "./Cubo"+contNombre+".jpg";
+                             nombreArchivo = "codification/Cubo"+contNombre+".jpeg";
                         }
-                        File outputFile = new File(nombreArchivo);
-                        FileOutputStream fos = new FileOutputStream(outputFile);
+                        outputFile = new File(nombreArchivo);
+                        fos = new FileOutputStream(outputFile);
                                               
                         ImgContainer image_code = getEncode(images_origenes.get(i), images_finales.get(x));
                         System.out.println("origen: " + i + " final: " + x);
@@ -236,6 +239,7 @@ public class Unzip {
         
         saveResults(finalData);
         
+        folderToZip("./codification");
     }
 
     /*FALTA QUE LE PASEMOS EL ARCHIVO COMPRIMIDO
@@ -243,43 +247,122 @@ public class Unzip {
        *Abra el archivo de texto y se lo pase al metodo decodeFile
         Y luego llame al metodo getDecode y le pase la imagen original 0, la imagen codificada, y la matriz myData
     */
-    public void decode(ArrayList<BufferedImage> images) {
-        decodeFile(); //lleno el arraylist con las tablas de las imagenes
-        /*for (DefaultTableModel t: arrayTes){
-            int[][] myData = tableToMatrix(t);
-        }*/
+    public void decode() throws IOException {
+        ArrayList<ArrayList<Tesela>> arrayTes = decodeFile(); //llenamos el arraylist con los datos del fichero
+        
+        ArrayList<int[][]> datos = new ArrayList<int[][]>();
+        
+        for (ArrayList<Tesela> arrayT: arrayTes){
+            DefaultTableModel dm = new DefaultTableModel();
+            String[] columnNames = { "id_tesela_base", "x_base", "y_base", "x_destino", "y_destino", "valor_comp" };
+            dm.setColumnIdentifiers(columnNames);
+            for(Tesela tes: arrayT){
+                String valor = String.valueOf(tes.getValor_comp());
+                dm.addRow(new Object[] { tes.getId_tesela_base(), tes.getX_base(),tes.getY_base(), tes.getX_destino(), tes.getY_destino(), Double.valueOf(valor)});
+            }
+            datos.add(tableToMatrix(dm));
+        }
+        
+        String zipFile = "codification.zip";
+        String outputFolder = "codification";
+        byte[] buffer = new byte[1024];
+        ArrayList<BufferedImage> imagesEncoded = new ArrayList<BufferedImage>();
+
+        //get the zip file content
+        ZipInputStream zis = new ZipInputStream(new FileInputStream(zipFile));
+        //get the zipped file list entry
+        ZipEntry ze = zis.getNextEntry();
+
+        while (ze != null) {
+
+            String current = ze.getName();
+
+            String[] name = current.split("[.]");
+            //System.out.println(ze.getName());
+            String fileName = name[0];
+            String extension = name[1];
+
+            File newFile = new File(outputFolder + File.separator + current);
+            new File(newFile.getParent()).mkdirs();
+
+            FileOutputStream fos = new FileOutputStream(newFile);
+
+            int len;
+            while ((len = zis.read(buffer)) > 0) {
+                fos.write(buffer, 0, len);
+            }
+
+            fos.close();
+
+            //if extension not jpg, convert
+            if (extension.equals("png") || extension.equals("gif") || extension.equals("bmp") || extension.equals("jpeg") || extension.equals("jpg")) {
+
+                BufferedImage bufferedImage = ImageIO.read(new File(outputFolder + File.separator + current));
+
+                // create a blank, RGB, same width and height, and a white background
+                BufferedImage newBufferedImage = new BufferedImage(bufferedImage.getWidth(), bufferedImage.getHeight(), BufferedImage.TYPE_INT_RGB);
+                newBufferedImage.createGraphics().drawImage(bufferedImage, 0, 0, Color.WHITE, null);
+
+                imagesEncoded.add(newBufferedImage);
+
+                // write to jpeg file
+                ImageIO.write(newBufferedImage, "jpeg", new File(outputFolder + File.separator + fileName + ".jpeg"));
+
+                // delete the original file unziped
+                newFile.delete();
+            }
+
+            ze = zis.getNextEntry();
+        }
+
+        zis.closeEntry();
+        zis.close();
     }
 
-    public void encodedecode(ArrayList<BufferedImage> images) {
-
+    public void encodedecode(ArrayList<BufferedImage> images) throws IOException {
+        this.encode(images);
+        this.decode();
     }
     
     //Abre el archivo y crea una tabla por los detalles de cada imagen codificada, y guarda en el ArrayList de tablas
-    public void decodeFile(){
+    public ArrayList<ArrayList<Tesela>> decodeFile() throws FileNotFoundException, IOException{
       
-        String name="./compression.txt";
+        ZipInputStream zis = new ZipInputStream(new FileInputStream("codification.zip"));
+        ZipEntry ze = zis.getNextEntry();
+        
+        /*String[] name = current.split("[.]");
+        //System.out.println(ze.getName());
+        String fileName = name[0];
+        String extension = name[1];
+
+        File newFile = new File(outputFolder + File.separator + current);*/
+        
+        String name="codification/compression.txt";
+        ArrayList<ArrayList<Tesela>> arrayDecode = new ArrayList<ArrayList<Tesela>>();
 
         try {   
             FileReader fr = new FileReader(name);
             BufferedReader br = new BufferedReader(fr);
 
             String sCurrentLine;            
-                        
+            
+            ArrayList<Tesela> arrayTeselasDecode = new ArrayList<Tesela>();
+
             while ((sCurrentLine = br.readLine()) != null) {                
                 String[] myRow = sCurrentLine.trim().split("\\s*,\\s*");
                 //miramos en que parte del archivo estamos
                 int numFoto = 0;
+
                 //Estamos leyendo la cabecera de una nueva sub-imagen, Creamos la tabla para esa imagen
                 if (myRow.length == 2){
                     numFoto = Integer.valueOf(myRow[1]);
-                    System.out.println("inicio de foto " + numFoto);              
-                
-                }else if(myRow.length == 1){ //Estamos leyendo el fin de esa imagen
-                    
-                    System.out.println("fin de foto " + numFoto);
+                    arrayTeselasDecode = new ArrayList<Tesela>();
 
-                }else if(myRow.length == 6){ //Estamos leyendo los datos de teselas de esa imagen  
-                    System.out.println(sCurrentLine);                  
+                }else if(myRow.length == 1){ //Estamos leyendo el fin de esa imagen                 
+                    arrayDecode.add(arrayTeselasDecode);
+
+                }else if(myRow.length == 6){ //Estamos leyendo los datos de teselas de esa imagen
+
                     String[] data = sCurrentLine.split(",");
                     arrayTeselasDecode.add(new Tesela(Integer.parseInt(data[0]),Integer.parseInt(data[1]),Integer.parseInt(data[2]),Integer.parseInt(data[3]),Integer.parseInt(data[4]),Double.parseDouble(data[5])));
                 }
@@ -291,18 +374,18 @@ public class Unzip {
         } catch (IOException e) { 
             e.printStackTrace();
         }        
-
+        return arrayDecode;
     }
 
     //recibe una tabla y devuelve una matriz con los datos de las teselas de esa imagen
     public int[][] tableToMatrix(DefaultTableModel imgTable){
         int[][] myData = new int[imgTable.getColumnCount()][imgTable.getRowCount()];
         
-        System.out.println(myData.length + " - " + myData[0].length);
+        //System.out.println(myData.length + " - " + myData[0].length);
         for (int i = 0; i < myData.length; i++) {
           for (int j = 0; j < myData[i].length; j++)
           {
-            System.out.println(myData[i].length + " ; " + i + " , " + j);
+            //System.out.println(myData[i].length + " ; " + i + " , " + j);
             try
             {
               myData[i][j] = Integer.parseInt(imgTable.getValueAt(j, i).toString());
@@ -317,6 +400,7 @@ public class Unzip {
     }    
  
     public ImgContainer getDecode(ImgContainer base, ImgContainer encoded, int[][] data){
+        
         teselar(base);
         ImgContainer result = new ImgContainer(ImgContainer.copia(encoded.getBufImg()), "encoded");
 
@@ -473,7 +557,12 @@ public class Unzip {
     public void saveResults(ArrayList<ArrayList<Tesela>> teselas){
         //creo el archivo donde guardo mis detalles de compresion para poder hacer el DECODE    
         try{
-            File compression = new File("./compression.txt");
+            //create output directory if not exists
+            File folder = new File("codification");
+            if (!folder.exists()) {
+                folder.mkdir();
+            }
+            File compression = new File("codification/compression.txt");
             if(!compression.exists()){
                 compression.createNewFile();
             }
@@ -504,7 +593,6 @@ public class Unzip {
         {
             ex.printStackTrace();
         }
-        //decodeFile();
     }
 
     public boolean tesExists(ArrayList<Tesela> arrayTeselas, int id_tesela){    
@@ -662,6 +750,64 @@ public class Unzip {
         return imgFiltered;
     }
 
+    public static void folderToZip(String folder){
+        File directoryToZip = new File(folder);
+        List<File> fileList = new ArrayList<File>();
+        getAllFiles(directoryToZip, fileList);
+        writeZipFile(directoryToZip, fileList);
+    }
+    
+    public static void getAllFiles(File dir, List<File> fileList) {
+        File[] files = dir.listFiles();
+        for (File file : files) {
+            fileList.add(file);
+            if (file.isDirectory()) {
+                getAllFiles(file, fileList);
+            }
+        }
+    }
+
+    public static void writeZipFile(File directoryToZip, List<File> fileList) {
+
+        try {
+                FileOutputStream fos = new FileOutputStream(directoryToZip.getName() + ".zip");
+                ZipOutputStream zos = new ZipOutputStream(fos);
+
+                for (File file : fileList) {
+                        if (!file.isDirectory()) { // we only zip files, not directories
+                                addToZip(directoryToZip, file, zos);
+                        }
+                }
+
+                zos.close();
+                fos.close();
+        } catch (FileNotFoundException e) {
+                e.printStackTrace();
+        } catch (IOException e) {
+                e.printStackTrace();
+        }
+    }
+
+    public static void addToZip(File directoryToZip, File file, ZipOutputStream zos) throws FileNotFoundException, IOException {
+
+        FileInputStream fis = new FileInputStream(file);
+
+        // we want the zipEntry's path to be a relative path that is relative
+        // to the directory being zipped, so chop off the rest of the path
+        String zipFilePath = file.getCanonicalPath().substring(directoryToZip.getCanonicalPath().length() + 1,file.getCanonicalPath().length());
+        ZipEntry zipEntry = new ZipEntry(zipFilePath);
+        zos.putNextEntry(zipEntry);
+
+        byte[] bytes = new byte[1024];
+        int length;
+        while ((length = fis.read(bytes)) >= 0) {
+                zos.write(bytes, 0, length);
+        }
+
+        zos.closeEntry();
+        fis.close();
+    }
+    
     public boolean isNeg() {
         return neg;
     }
