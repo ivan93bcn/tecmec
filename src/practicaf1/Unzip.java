@@ -177,33 +177,56 @@ public class Unzip {
         }
         
         try {
-
-            File outputFile = new File("./encode.jpg");
-            FileOutputStream fos = new FileOutputStream(outputFile);
+            
+            
             int x = 0, xf = 0;
+            int cont1=0;
             
             int correctFinals = (images_origenes.size()-1) * this.gop; //imagen origen de inicio y de final
             int diff =  images_finales.size() - correctFinals;
 
             for(int i = 0; i < images_origenes.size(); i++){
+                cont1++;
                 if(i == images_origenes.size() - 1){
+                    
                     //System.out.println("origen: " + i);
                     for(int j = correctFinals; j < images_finales.size(); j++){
+                            String nombreArchivo = "";
+                        if (cont1<10){
+                             nombreArchivo = "./Cubo0"+cont1+".jpg";
+                        }else{
+                             nombreArchivo = "./Cubo"+cont1+".jpg";
+                        }
+                        File outputFile = new File(nombreArchivo);
+                        FileOutputStream fos = new FileOutputStream(outputFile);
+                        
                         ImgContainer image_code = getEncode(images_origenes.get(i), images_finales.get(j));
-                        System.out.println("origen: " + i + " final: " + x);
+                        System.out.println("origen: " + i + " final: " + j);
                         ImageIO.write(image_code.getBufImg(), "jpeg", fos);
-                        x += 1;
+                        fos.close();
+                        cont1++;
                     }
                 } else{
                     for(int j = 0; j < this.gop; j++){
+                        String nombreArchivo = "";
+                        if (cont1<10){
+                             nombreArchivo = "./Cubo0"+cont1+".jpg";
+                        }else{
+                             nombreArchivo = "./Cubo"+cont1+".jpg";
+                        }
+                        File outputFile = new File(nombreArchivo);
+                        FileOutputStream fos = new FileOutputStream(outputFile);
+                                              
                         ImgContainer image_code = getEncode(images_origenes.get(i), images_finales.get(x));
                         System.out.println("origen: " + i + " final: " + x);
                         ImageIO.write(image_code.getBufImg(), "jpeg", fos);
+                        fos.close();
                         x += 1;
+                        cont1++;
                     }
                 }
             }
-            fos.close();
+           // fos.close();
             
         } catch (FileNotFoundException e1) {
             e1.printStackTrace();
