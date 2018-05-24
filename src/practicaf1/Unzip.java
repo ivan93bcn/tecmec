@@ -13,6 +13,9 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
+
+import java.io.BufferedReader;
+import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import javax.imageio.ImageIO;
@@ -43,13 +46,14 @@ public class Unzip {
     static long T_ini = 0L;
     static long T_fin = 0L;
     static long N_coincidencias;
-    static ArrayList<ImgContainer> list_teselas = new ArrayList();
-    
-    /*DefaultTableModel dm;  
-    ArrayList<String> lineaComp = new ArrayList();*/
+    static ArrayList<ImgContainer> list_teselas = new ArrayList(); 
     
     static ArrayList<Tesela> arrayTeselas = new ArrayList<Tesela>();
-
+    
+    static ArrayList<DefaultTableModel>  arrayTables = new ArrayList();
+    
+    DefaultTableModel dm = new DefaultTableModel();
+    
     public Unzip() {
         this.neg = false;
         this.sep = false;
@@ -63,15 +67,16 @@ public class Unzip {
         this.quality = 0;
         this.batch = false;
         
-        /*this.dm = new DefaultTableModel();
-        String[] columnNames = {"id_tesela_base", "x_base", "y_base", "x_destino", "y_destino", "valor_comp"};
-        this.dm.setColumnIdentifiers(columnNames);*/
+        
+        //String[] columnNames = {"id_tesela_base", "x_base", "y_base", "x_destino", "y_destino", "valor_comp"};
+        //dm.setColumnIdentifiers(columnNames);
+        //this.arrayTables.add(dm);
     }
 
     public boolean unZipIt(String zipFile, String outputFolder, int fps, boolean encode, boolean decode) {
 
         byte[] buffer = new byte[1024];
-
+        this.dm= null;
         ArrayList<BufferedImage> images = new ArrayList<>();
 
         try {
@@ -189,6 +194,165 @@ public class Unzip {
     public void encodedecode(ArrayList<BufferedImage> images) {
 
     }
+    
+    //Abre el archivo y crea una tabla por los detalles de cada imagen codificada, y guarda en el ArrayList de tablas
+    public void decodeFile(){
+      
+        String name="./compression.txt";
+
+        try {   
+            FileReader fr = new FileReader(name);
+            BufferedReader br = new BufferedReader(fr);
+
+            String sCurrentLine;            
+            
+            int estado =0; //medida de control para asegurar que lee bien
+            
+            while ((sCurrentLine = br.readLine()) != null) {                
+                String[] myRow = sCurrentLine.trim().split("\\s*,\\s*");
+                //miramos en que parte del archivo estamos
+                int numFoto=0;
+                //Estamos leyendo la cabecera de una nueva sub-imagen, Creamos la tabla para esa imagen
+                if (myRow.length == 2 && estado == 0){
+                    numFoto = Integer.valueOf(myRow[1]);
+                    System.out.println("inicio de foto "+numFoto);
+                   
+                    dm = null;
+                    dm = new DefaultTableModel();
+                    String[] columnNames = {"id_tesela_base", "x_base", "y_base", "x_destino", "y_destino", "valor_comp"};
+                    dm.setColumnIdentifiers(columnNames);
+                    
+                
+                //Estamos leyendo el fin de esa imagen
+                }else if(myRow.length == 1){
+                    System.out.println("fin de foto "+numFoto);
+                    arrayTables.add(dm);
+                    dm = null;
+                    
+                 
+                }else if(myRow.length == 6){//Estamos leyendo los datos de teselas de esa imagen  
+                    System.out.println(sCurrentLine);
+                    //for(String f : myRow){
+                    //System.out.print(f);}
+                //guardar valores en la tabla  
+                    //dm.addRow(new Object[] { Integer.valueOf(id_tesela), Integer.valueOf(tes_x0), Integer.valueOf(tes_y0), Integer.valueOf(i), Integer.valueOf(j), Double.valueOf(valor) });
+                    //Object x = new Object[] {Integer.valueOf(myRow[0]), Integer.valueOf(myRow[1]), Integer.valueOf(myRow[2]), Integer.valueOf(myRow[3]), Integer.valueOf(myRow[4]), Double.valueOf(myRow[5]) };
+                    dm.addRow(myRow);
+                }
+                 //un print de prueba
+                //System.out.println(Double.valueOf(myRow[5]));
+            }          
+            
+            if (br != null)
+                br.close();
+            if (fr != null)
+                fr.close();
+
+        } catch (IOException e) { 
+            e.printStackTrace();
+        }        
+
+    }
+
+    //recibe una tabla y devuelve una matriz con los datos de las teselas de esa imagen
+    public int[][] encode_data(DefaultTableModel imgTable){
+        int[][] myData = new int[imgTable.getColumnCount()][imgTable.getRowCount()];
+        
+        System.out.println(myData.length + " - " + myData[0].length);
+        for (int i = 0; i < myData.length; i++) {
+          for (int j = 0; j < myData[i].length; j++)
+          {
+            System.out.println(myData[i].length + " ; " + i + " , " + j);
+            try
+            {
+              myData[i][j] = Integer.parseInt(imgTable.getValueAt(j, i).toString());
+            }
+            catch (NumberFormatException e)
+            {
+              myData[i][j] = ((int)Double.parseDouble(imgTable.getValueAt(j, i).toString()));
+            }
+          }
+        }  
+        return myData;
+    }    
+
+    
+    
+    /*
+    public static ImgContainer getDecode(ImgContainer base, ImgContainer encoded, int[][] data)
+    {
+    teselar(base);
+    ImgContainer result = new ImgContainer(ImgContainer.copia(encoded.getBufImg()), "encoded");
+    
+    BufferedImage img = result.getBufImg();
+    int count_tesela = 0;
+    int n_teselas = data[0].length;
+    for (int k = data[0].length - 1; k >= 0; k--)
+    {
+      int x0_dest = data[3][k];
+      int y0_dest = data[4][k];
+      ImgContainer tesela = (ImgContainer)list_teselas.get(data[0][k]);
+      
+      System.out.println("decoding id " + tesela.getName() + " (" + count_tesela + " of " + n_teselas + ")");
+      BufferedImage tes = tesela.getBufImg();
+      int alto_tesela = tes.getHeight();
+      int ancho_tesela = tes.getWidth();
+      
+        for (int i = 0; i < alto_tesela; i++) {
+            for (int j = 0; j < ancho_tesela; j++){
+              int RGB = tes.getRGB(j, i);
+              img.setRGB(j + x0_dest, i + y0_dest, RGB);
+            }
+        }    
+      count_tesela++;
+    }
+    return result;
+  }
+  
+   /*
+  
+    
+    
+    
+    
+    
+    /*
+    
+  public static ArrayList teselar(ImgContainer x)
+  {
+    list_teselas = new ArrayList();
+    BufferedImage bi = x.getBufImg();
+    int altura = bi.getHeight();
+    int ancho = bi.getWidth();
+    
+    double tamy = altura / getNteselas();
+    double tamx = ancho / getNteselas();
+    
+    int h = 0;
+    WritableRaster wras = (WritableRaster)bi.getData();
+    for (int i = 0; i < getNteselas(); i++) {
+      for (int j = 0; j < getNteselas(); j++) {
+        if (i * tamx + tamx <= ancho) {
+          if (j * tamy + tamy <= altura)
+          {
+            WritableRaster tesela = (WritableRaster)wras.createChild((int)(i * tamx), (int)(j * tamy), 
+              (int)tamx, (int)tamy, 0, 0, null);
+            BufferedImage imagen = new BufferedImage(bi.getColorModel(), tesela, 
+              bi.getColorModel().isAlphaPremultiplied(), null);
+            ImgContainer tes = new ImgContainer(imagen, Integer.toString(h));
+            tes.setX0((int)(i * tamx));
+            tes.setY0((int)(j * tamy));
+            list_teselas.add(tes);
+            h++;
+          }
+        }
+      }
+    }
+    return list_teselas;
+  }
+    
+    */
+    
 
     public ImgContainer getEncode(ImgContainer base, ImgContainer destino) {
         T_ini = System.nanoTime();
@@ -198,6 +362,8 @@ public class Unzip {
         int id_tesela = 0;
         int n_teselas = list_teselas.size();
         long n_coincidencias = 0L;
+        
+   
         
         for (ImgContainer tes : list_teselas) {
             BufferedImage tesela = tes.getBufImg();
@@ -328,11 +494,17 @@ public class Unzip {
             }
             FileWriter fw = new FileWriter(compression.getAbsoluteFile());
             BufferedWriter bw = new BufferedWriter(fw);
+                
+            bw.write("Foto,0"); //numero de la foto de la k guarda teselas
+            bw.newLine();
+            
                 for (Tesela tesela : teselas){ 
                     bw.write(tesela.toString());
                     bw.newLine();
                 }
-
+            
+            bw.write("Fin"); //indica el final de los datos de esa imagen
+            bw.newLine();
             bw.close();
             fw.close();
         }
@@ -340,6 +512,7 @@ public class Unzip {
         {
             ex.printStackTrace();
         }
+        decodeFile();
     }
 
     public boolean tesExists(ArrayList<Tesela> arrayTeselas, int id_tesela){    
