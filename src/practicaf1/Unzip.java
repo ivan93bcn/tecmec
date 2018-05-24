@@ -43,6 +43,7 @@ public class Unzip {
     private int quality;
     boolean batch;
     
+    static int n_teselas;
     static long T_ini = 0L;
     static long T_fin = 0L;
     static long N_coincidencias;
@@ -187,7 +188,17 @@ public class Unzip {
 
     }
 
+    /*FALTA QUE LE PASEMOS EL ARCHIVO COMPRIMIDO
+       *Lo abra, guarde las imagenes en el arrayList de Buffered images
+       *Abra el archivo de texto y se lo pase al metodo decodeFile
+        Y luego llame al metodo getDecode y le pase la imagen original 0, la imagen codificada, y la matriz myData
+    */
     public void decode(ArrayList<BufferedImage> images) {
+        decodeFile(); //lleno el arraylist con las tablas de las imagenes
+        for (DefaultTableModel t: arrayTables){
+            int[][] myData = tableToMatrix(t);
+        }
+        
 
     }
 
@@ -255,7 +266,7 @@ public class Unzip {
     }
 
     //recibe una tabla y devuelve una matriz con los datos de las teselas de esa imagen
-    public int[][] encode_data(DefaultTableModel imgTable){
+    public int[][] tableToMatrix(DefaultTableModel imgTable){
         int[][] myData = new int[imgTable.getColumnCount()][imgTable.getRowCount()];
         
         System.out.println(myData.length + " - " + myData[0].length);
@@ -278,80 +289,38 @@ public class Unzip {
 
     
     
-    /*
-    public static ImgContainer getDecode(ImgContainer base, ImgContainer encoded, int[][] data)
-    {
-    teselar(base);
-    ImgContainer result = new ImgContainer(ImgContainer.copia(encoded.getBufImg()), "encoded");
     
-    BufferedImage img = result.getBufImg();
-    int count_tesela = 0;
-    int n_teselas = data[0].length;
-    for (int k = data[0].length - 1; k >= 0; k--)
-    {
-      int x0_dest = data[3][k];
-      int y0_dest = data[4][k];
-      ImgContainer tesela = (ImgContainer)list_teselas.get(data[0][k]);
-      
-      System.out.println("decoding id " + tesela.getName() + " (" + count_tesela + " of " + n_teselas + ")");
-      BufferedImage tes = tesela.getBufImg();
-      int alto_tesela = tes.getHeight();
-      int ancho_tesela = tes.getWidth();
-      
-        for (int i = 0; i < alto_tesela; i++) {
-            for (int j = 0; j < ancho_tesela; j++){
-              int RGB = tes.getRGB(j, i);
-              img.setRGB(j + x0_dest, i + y0_dest, RGB);
-            }
-        }    
-      count_tesela++;
-    }
-    return result;
-  }
-  
-   /*
-  
-    
-    
-    
-    
-    
-    /*
-    
-  public static ArrayList teselar(ImgContainer x)
-  {
-    list_teselas = new ArrayList();
-    BufferedImage bi = x.getBufImg();
-    int altura = bi.getHeight();
-    int ancho = bi.getWidth();
-    
-    double tamy = altura / getNteselas();
-    double tamx = ancho / getNteselas();
-    
-    int h = 0;
-    WritableRaster wras = (WritableRaster)bi.getData();
-    for (int i = 0; i < getNteselas(); i++) {
-      for (int j = 0; j < getNteselas(); j++) {
-        if (i * tamx + tamx <= ancho) {
-          if (j * tamy + tamy <= altura)
-          {
-            WritableRaster tesela = (WritableRaster)wras.createChild((int)(i * tamx), (int)(j * tamy), 
-              (int)tamx, (int)tamy, 0, 0, null);
-            BufferedImage imagen = new BufferedImage(bi.getColorModel(), tesela, 
-              bi.getColorModel().isAlphaPremultiplied(), null);
-            ImgContainer tes = new ImgContainer(imagen, Integer.toString(h));
-            tes.setX0((int)(i * tamx));
-            tes.setY0((int)(j * tamy));
-            list_teselas.add(tes);
-            h++;
-          }
+    public ImgContainer getDecode(ImgContainer base, ImgContainer encoded, int[][] data){
+        teselar(base);
+        ImgContainer result = new ImgContainer(ImgContainer.copia(encoded.getBufImg()), "encoded");
+
+        BufferedImage img = result.getBufImg();
+        int count_tesela = 0;
+        n_teselas = data[0].length;
+        for (int k = data[0].length - 1; k >= 0; k--)
+        {
+          int x0_dest = data[3][k];
+          int y0_dest = data[4][k];
+          ImgContainer tesela = (ImgContainer)list_teselas.get(data[0][k]);
+
+          System.out.println("decoding id " + tesela.getName() + " (" + count_tesela + " of " + n_teselas + ")");
+          BufferedImage tes = tesela.getBufImg();
+          int alto_tesela = tes.getHeight();
+          int ancho_tesela = tes.getWidth();
+
+            for (int i = 0; i < alto_tesela; i++) {
+                for (int j = 0; j < ancho_tesela; j++){
+                  int RGB = tes.getRGB(j, i);
+                  img.setRGB(j + x0_dest, i + y0_dest, RGB);
+                }
+            }    
+          count_tesela++;
         }
-      }
-    }
-    return list_teselas;
-  }
-    
-    */
+        return result;
+   }
+  
+   
+  
     
 
     public ImgContainer getEncode(ImgContainer base, ImgContainer destino) {
@@ -360,7 +329,7 @@ public class Unzip {
         ImgContainer result = new ImgContainer(ImgContainer.copia(destino.getBufImg()), "resultat");
         ImgContainer result_track = new ImgContainer(ImgContainer.copia(destino.getBufImg()), "proces");
         int id_tesela = 0;
-        int n_teselas = list_teselas.size();
+        n_teselas = list_teselas.size();
         long n_coincidencias = 0L;
         
    
