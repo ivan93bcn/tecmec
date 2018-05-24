@@ -182,7 +182,7 @@ public class Unzip {
             FileOutputStream fos = new FileOutputStream(outputFile);
             int x = 0, xf = 0;
             
-            int correctFinals = images_origenes.size() * this.gop;
+            int correctFinals = (images_origenes.size()-1) * this.gop; //imagen origen de inicio y de final
             int diff =  images_finales.size() - correctFinals;
 
             for(int i = 0; i < images_origenes.size(); i++){
