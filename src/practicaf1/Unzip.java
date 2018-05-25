@@ -264,7 +264,7 @@ public class Unzip {
         long original = f2.length();        
         System.out.println("original: "+original+", codificado:"+codificado);
         System.out.printf("La proporcion de compresión es 100:%.5f", (float)codificado*100/original);
-        
+        System.out.println("");
         
         
         
