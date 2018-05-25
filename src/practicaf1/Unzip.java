@@ -261,10 +261,10 @@ public class Unzip {
         File f1 = new File("./codification.zip");
         long codificado = f1.length();
         File f2 = new File("./CuboJPG.zip");
-        long original = f2.length();
-        float valor = codificado*100/original;
+        long original = f2.length();        
         System.out.println("original: "+original+", codificado:"+codificado);
-        System.out.println("La proporcion de compresión es 100:"+valor);
+        System.out.printf("La proporcion de compresión es 100:%.5f", (float)codificado*100/original);
+        
         
         
         
