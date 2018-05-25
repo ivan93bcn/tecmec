@@ -33,6 +33,8 @@ import javax.swing.table.DefaultTableModel;
  */
 public class Unzip {
 
+    /// ATRIBUTOS
+    
     private boolean neg;
     private boolean sep;
     private boolean bn;
@@ -55,7 +57,10 @@ public class Unzip {
     static ArrayList<Tesela> arrayTeselas = new ArrayList<Tesela>();
         
     static ArrayList<ArrayList<Tesela>> finalData = new ArrayList<ArrayList<Tesela>>();
-        
+    
+    /**
+     * Constructor
+     */
     public Unzip() {
         this.neg = false;
         this.sep = false;
@@ -70,7 +75,16 @@ public class Unzip {
         this.batch = false;
         this.fps = 12;
     }
-
+    
+    /**
+     * Función que inicializa el codec de video
+     * 
+     * @param zipFile
+     * @param outputFolder
+     * @param encode
+     * @param decode
+     * @return 
+     */
     public boolean unZipIt(String zipFile, String outputFolder, boolean encode, boolean decode) {
 
         byte[] buffer = new byte[1024];
@@ -162,7 +176,12 @@ public class Unzip {
         }
         
     }
-
+    
+    /**
+     * La llamamos cuando el usuario quiere codificar
+     * 
+     * @param images 
+     */
     public void encode(ArrayList<BufferedImage> images) {
         T_ini = System.nanoTime();
         System.out.println("Codificando imagenes...");
@@ -273,11 +292,11 @@ public class Unzip {
         
     }
 
-    /*FALTA QUE LE PASEMOS EL ARCHIVO COMPRIMIDO
-       *Lo abra, guarde las imagenes en el arrayList de Buffered images
-       *Abra el archivo de texto y se lo pase al metodo decodeFile
-        Y luego llame al metodo getDecode y le pase la imagen original 0, la imagen codificada, y la matriz myData
-    */
+    /**
+     * La llamamos cuando el usuario quiere descodificar
+     * 
+     * @throws IOException 
+     */
     public void decode() throws IOException {
         T_ini= System.nanoTime();
         System.out.println("Decodificando imagenes...");
@@ -355,6 +374,15 @@ public class Unzip {
         decodeloop(datos, imagesEncoded);        
     }
 
+    /**
+     * Recorre el array de tablas de teselas y descodifica cada imagen con su información
+     * Posteriormente reproduce en video los resultados
+     * 
+     * @param datos
+     * @param imagesEncoded
+     * @throws FileNotFoundException
+     * @throws IOException 
+     */
     public void decodeloop(ArrayList<int[][]> datos, ArrayList<BufferedImage> imagesEncoded) throws FileNotFoundException, IOException{
         ArrayList<BufferedImage> imagesDecoded = new ArrayList<BufferedImage>();
         int cont = 0;
@@ -379,12 +407,24 @@ public class Unzip {
         playList(imagesDecoded, this.fps);
     }
     
+    /**
+     * La llamamos cuando el usuario quiere codificar y descodificar
+     * 
+     * @param images
+     * @throws IOException 
+     */
     public void encodedecode(ArrayList<BufferedImage> images) throws IOException {
         this.encode(images);
         this.decode();
     }
     
-    //Abre el archivo y crea una tabla por los detalles de cada imagen codificada, y guarda en el ArrayList de tablas
+    /**
+     * Abre el archivo y crea una tabla por los detalles de cada imagen codificada, y guarda en el ArrayList de tablas
+     * 
+     * @return
+     * @throws FileNotFoundException
+     * @throws IOException 
+     */
     public ArrayList<ArrayList<Tesela>> decodeFile() throws FileNotFoundException, IOException{
       
         ZipInputStream zis = new ZipInputStream(new FileInputStream("codification.zip"));
@@ -437,7 +477,12 @@ public class Unzip {
         return arrayDecode;
     }
 
-    //recibe una tabla y devuelve una matriz con los datos de las teselas de esa imagen
+    /**
+     * Recibe una tabla y devuelve una matriz con los datos de las teselas de esa imagen
+     * 
+     * @param imgTable
+     * @return 
+     */
     public int[][] tableToMatrix(DefaultTableModel imgTable){
         int[][] myData = new int[imgTable.getColumnCount()][imgTable.getRowCount()];
         
@@ -459,6 +504,14 @@ public class Unzip {
         return myData;
     }    
  
+    /**
+     * Algoritmo de descodificación
+     * 
+     * @param base
+     * @param encoded
+     * @param data
+     * @return 
+     */
     public ImgContainer getDecode(ImgContainer base, ImgContainer encoded, int[][] data){
         
         teselar(base);
@@ -488,7 +541,14 @@ public class Unzip {
         }
         return result;
    }
-  
+    
+    /**
+     * Algoritmo de codificación
+     * 
+     * @param base
+     * @param destino
+     * @return 
+     */
     public ImgContainer getEncode(ImgContainer base, ImgContainer destino) {
         
         teselar(base);
@@ -613,6 +673,11 @@ public class Unzip {
         return result;
     }
 
+    /**
+     * Guarda los resultados en el fichero
+     * 
+     * @param teselas 
+     */
     public void saveResults(ArrayList<ArrayList<Tesela>> teselas){
         //creo el archivo donde guardo mis detalles de compresion para poder hacer el DECODE    
         try{
@@ -654,6 +719,13 @@ public class Unzip {
         }
     }
 
+    /**
+     * Comprueba si la tesela ya ha sido añadida en el array de teselas
+     * 
+     * @param arrayTeselas
+     * @param id_tesela
+     * @return 
+     */    
     public boolean tesExists(ArrayList<Tesela> arrayTeselas, int id_tesela){    
         for(Tesela tes: arrayTeselas){
             if(tes.getId_tesela_base() == id_tesela){
@@ -663,6 +735,17 @@ public class Unzip {
         return false;
     }
     
+    /**
+     * Compara entre dos teselas
+     * 
+     * @param x1
+     * @param x2
+     * @param x3
+     * @param y1
+     * @param y2
+     * @param y3
+     * @return 
+     */
     private static double funcioComparadora(double x1, double x2, double x3, double y1, double y2, double y3) {
         return 10.0D * (Math.sqrt(x1 - y1) + Math.sqrt(x2 - y2) + Math.sqrt(x3 - y3));
     }
@@ -712,6 +795,12 @@ public class Unzip {
         return bi;
     }
 
+    /**
+     * Divide la imagen en teselas
+     * 
+     * @param x
+     * @return 
+     */
     public ArrayList teselar(ImgContainer x) {
         list_teselas = new ArrayList();
         BufferedImage bi = x.getBufImg();
@@ -810,7 +899,13 @@ public class Unzip {
 
         return imgFiltered;
     }
-
+    
+    /**
+     * Convierte una carpeta en zip
+     * 
+     * @param folder
+     * @param zipFolder 
+     */
     public static void folderToZip(String folder, String zipFolder){
         File directoryToZip = new File(folder);
         List<File> fileList = new ArrayList<File>();
@@ -818,6 +913,12 @@ public class Unzip {
         writeZipFile(directoryToZip, fileList, zipFolder);
     }
     
+    /**
+     * Devuelve todos los archivos de una carpeta
+     * 
+     * @param dir
+     * @param fileList 
+     */
     public static void getAllFiles(File dir, List<File> fileList) {
         File[] files = dir.listFiles();
         for (File file : files) {
@@ -828,6 +929,13 @@ public class Unzip {
         }
     }
 
+    /**
+     * Escribe el archivo comprimido
+     * 
+     * @param directoryToZip
+     * @param fileList
+     * @param zipFolder 
+     */
     public static void writeZipFile(File directoryToZip, List<File> fileList, String zipFolder) {
 
         try {
@@ -848,7 +956,16 @@ public class Unzip {
                 e.printStackTrace();
         }
     }
-
+    
+    /**
+     * Añade las imagenes en el archivo comprimido
+     * 
+     * @param directoryToZip
+     * @param file
+     * @param zos
+     * @throws FileNotFoundException
+     * @throws IOException 
+     */
     public static void addToZip(File directoryToZip, File file, ZipOutputStream zos) throws FileNotFoundException, IOException {
 
         FileInputStream fis = new FileInputStream(file);
@@ -867,6 +984,8 @@ public class Unzip {
         zos.closeEntry();
         fis.close();
     }
+    
+    /// GETTERS Y SETTERS
     
     public boolean isNeg() {
         return neg;

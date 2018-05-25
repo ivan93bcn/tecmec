@@ -9,12 +9,21 @@ import java.awt.image.WritableRaster;
  */
 public class ImgContainer
 {
+  
+  /// ATRIBUTOS
+    
   private BufferedImage bufImage;
   String nomImatge;
   private int x0;
   private int y0;
   private boolean modified = false;
   
+  /**
+   * Constructor
+   * 
+   * @param x
+   * @param y 
+   */
   public ImgContainer(BufferedImage x, String y)
   {
     this.bufImage = x;
@@ -22,6 +31,8 @@ public class ImgContainer
     this.x0 = 0;
     this.y0 = 0;
   }
+  
+  /// GETTERS Y SETTERS
   
   public void setBufImg(BufferedImage bi)
   {
@@ -58,12 +69,6 @@ public class ImgContainer
     return this.nomImatge;
   }
   
-  public static BufferedImage copia(BufferedImage original)
-  {
-    return new BufferedImage(original.getColorModel(), (WritableRaster)original.getData(), 
-      original.getColorModel().isAlphaPremultiplied(), null);
-  }
-  
   public boolean isModified()
   {
     return this.modified;
@@ -72,6 +77,17 @@ public class ImgContainer
   public void setModified(boolean modified)
   {
     this.modified = modified;
+  }
+  
+  /**
+   * Hace una copia de la imagen pasada por parametro
+   * @param original
+   * @return 
+   */
+  public static BufferedImage copia(BufferedImage original)
+  {
+    return new BufferedImage(original.getColorModel(), (WritableRaster)original.getData(), 
+      original.getColorModel().isAlphaPremultiplied(), null);
   }
 }
 

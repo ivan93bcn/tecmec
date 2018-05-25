@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package practicaf1;
 
 /**
@@ -10,6 +5,9 @@ package practicaf1;
  * @author Ivan Toro and David Muntal
  */
 public class Tesela {
+    
+    /// ATRIBUTOS
+    
     private int id_tesela_base;
     private int x_base;
     private int y_base;
@@ -17,6 +15,16 @@ public class Tesela {
     private int y_destino;
     private double valor_comp;
 
+    /**
+     * Constructor 
+     * 
+     * @param id
+     * @param xbase
+     * @param ybase
+     * @param xdestino
+     * @param ydestino
+     * @param valor 
+     */
     Tesela(int id, int xbase, int ybase, int xdestino, int ydestino, double valor){
         this.id_tesela_base = id;
         this.x_base = xbase;
@@ -26,6 +34,8 @@ public class Tesela {
         this.valor_comp = valor;
     }
 
+    /// GETTERS Y SETTERS
+    
     public int getId_tesela_base() {
         return id_tesela_base;
     }
@@ -74,6 +84,11 @@ public class Tesela {
         this.valor_comp = valor_comp;
     }
     
+    /**
+     * Devuelve en formato toString los datos de la tesela
+     * 
+     * @return 
+     */
     @Override
     public String toString(){
         return this.id_tesela_base + "," + this.x_base + "," + this.y_base + "," + this.x_destino + "," + this.y_destino + "," + this.valor_comp;
