@@ -9,7 +9,6 @@ public class PracticaF1 {
     public static void main( String[] args )
     {             
         String input = "", output = "";
-        int fps = 24;
         boolean encode = false, decode = false;
 
         Unzip unZip = new Unzip();
@@ -42,7 +41,7 @@ public class PracticaF1 {
                     decode = true;
                     break;
                 case "--fps":
-                    fps = Integer.parseInt(args[i+1]);
+                    unZip.setFps(Integer.parseInt(args[i+1]));
                     i++;
                     break;
                 case "--binarization":
@@ -93,7 +92,7 @@ public class PracticaF1 {
         System.out.println("----- PROJECTE PRÀCTIQUES -----");
         
         do{ 
-            ok = unZip.unZipIt(input, output, fps, encode, decode);
+            ok = unZip.unZipIt(input, output, encode, decode);
             
             if(!ok){
                 System.out.println("\nParametros incorrectos!");

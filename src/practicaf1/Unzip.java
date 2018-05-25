@@ -44,6 +44,7 @@ public class Unzip {
     private int size_y;
     private int quality;
     boolean batch;
+    private int fps;
     
     static int n_teselas;
     static long T_ini = 0L;
@@ -67,14 +68,10 @@ public class Unzip {
         this.size_y = 0;
         this.quality = 0;
         this.batch = false;
-        
-        
-        //String[] columnNames = {"id_tesela_base", "x_base", "y_base", "x_destino", "y_destino", "valor_comp"};
-        //dm.setColumnIdentifiers(columnNames);
-        //this.arrayTables.add(dm);
+        this.fps = 12;
     }
 
-    public boolean unZipIt(String zipFile, String outputFolder, int fps, boolean encode, boolean decode) {
+    public boolean unZipIt(String zipFile, String outputFolder, boolean encode, boolean decode) {
 
         byte[] buffer = new byte[1024];
 
@@ -140,18 +137,20 @@ public class Unzip {
 
             zis.closeEntry();
             zis.close();
-
-            //Reprodueix les imatges amb un fps concret
-            //playList(images, fps);
+            
             if (encode && !decode) {
                 this.encode(images);
             } else if (!encode && decode) {
                 this.decode();
             } else if (encode && decode) {
                 this.encodedecode(images);
+            } else{
+                playList(images, this.fps);
             }
+            
+            //Reprodueix les imatges amb un fps concret
 
-            //System.out.println("Done");
+            System.out.println("Done");
             return true;
 
         } catch (IOException ex) {
@@ -161,8 +160,11 @@ public class Unzip {
 
     public void encode(ArrayList<BufferedImage> images) {
         
+        System.out.println("Codificando imagenes...");
+        
         ArrayList<ImgContainer> images_origenes = new ArrayList<ImgContainer>();
         ArrayList<ImgContainer> images_finales = new ArrayList<ImgContainer>();
+        ArrayList<BufferedImage> imagesEncoded = new ArrayList<BufferedImage>();
         
         //Añadimos en un array las imagenes de origen
         for(int i = 0; i < images.size(); i += this.gop+1){
@@ -177,8 +179,6 @@ public class Unzip {
         }
         
         try {
-            
-            
             int x = 0, xf = 0;
             int contNombre=0;
             
@@ -191,6 +191,7 @@ public class Unzip {
                 File outputFile = new File(nombreArchivo);
                 FileOutputStream fos = new FileOutputStream(outputFile);
                 ImageIO.write(images_origenes.get(i).getBufImg(), "jpeg", fos);
+                imagesEncoded.add(images_origenes.get(i).getBufImg());
                 contNombre++;
                 if(i == images_origenes.size() - 1){
                     
@@ -205,8 +206,9 @@ public class Unzip {
                         fos = new FileOutputStream(outputFile);
                         
                         ImgContainer image_code = getEncode(images_origenes.get(i), images_finales.get(j));
-                        System.out.println("origen: " + i + " final: " + j);
+                        //System.out.println("origen: " + i + " final: " + j);
                         ImageIO.write(image_code.getBufImg(), "jpeg", fos);
+                        imagesEncoded.add(image_code.getBufImg());
                         fos.close();
                         contNombre++;
                     }
@@ -221,8 +223,9 @@ public class Unzip {
                         fos = new FileOutputStream(outputFile);
                                               
                         ImgContainer image_code = getEncode(images_origenes.get(i), images_finales.get(x));
-                        System.out.println("origen: " + i + " final: " + x);
+                        //System.out.println("origen: " + i + " final: " + x);
                         ImageIO.write(image_code.getBufImg(), "jpeg", fos);
+                        imagesEncoded.add(image_code.getBufImg());
                         fos.close();
                         x += 1;
                         contNombre++;
@@ -238,7 +241,10 @@ public class Unzip {
         }
         
         saveResults(finalData);
+                
+        System.out.println("Reproduciendo imagenes codificadas...");
         
+        playList(imagesEncoded, this.fps);
         folderToZip("./codification");
     }
 
@@ -248,6 +254,9 @@ public class Unzip {
         Y luego llame al metodo getDecode y le pase la imagen original 0, la imagen codificada, y la matriz myData
     */
     public void decode() throws IOException {
+        
+        System.out.println("Decodificando imagenes...");
+        
         ArrayList<ArrayList<Tesela>> arrayTes = decodeFile(); //llenamos el arraylist con los datos del fichero
         
         ArrayList<int[][]> datos = new ArrayList<int[][]>();
@@ -317,8 +326,32 @@ public class Unzip {
 
         zis.closeEntry();
         zis.close();
+        
+        decodeloop(datos, imagesEncoded);        
     }
 
+    public void decodeloop(ArrayList<int[][]> datos, ArrayList<BufferedImage> imagesEncoded) throws FileNotFoundException, IOException{
+        ArrayList<BufferedImage> imagesDecoded = new ArrayList<BufferedImage>();
+        int cont = 0;
+        for(int[][] data: datos){
+            if(cont < imagesEncoded.size()){
+                imagesDecoded.add(imagesEncoded.get(cont));
+            }
+            int gops = cont;
+            for(int i = 0; i < this.gop; i++){
+                if(cont < imagesEncoded.size() && (gops+1) < imagesEncoded.size()){
+                    imagesDecoded.add(getDecode(new ImgContainer(imagesEncoded.get(cont),""), new ImgContainer(imagesEncoded.get(gops+1),""), data).getBufImg());
+                    gops++;
+                }
+            }
+            cont += this.gop+1;
+        }
+        
+        System.out.println("Reproduciendo imagenes decodificadas...");
+
+        playList(imagesDecoded, this.fps);
+    }
+    
     public void encodedecode(ArrayList<BufferedImage> images) throws IOException {
         this.encode(images);
         this.decode();
@@ -413,7 +446,7 @@ public class Unzip {
           int y0_dest = data[4][k];
           ImgContainer tesela = (ImgContainer)list_teselas.get(data[0][k]);
 
-          System.out.println("decoding id " + tesela.getName() + " (" + count_tesela + " of " + n_teselas + ")");
+          //System.out.println("decoding id " + tesela.getName() + " (" + count_tesela + " of " + n_teselas + ")");
           BufferedImage tes = tesela.getBufImg();
           int alto_tesela = tes.getHeight();
           int ancho_tesela = tes.getWidth();
@@ -700,22 +733,24 @@ public class Unzip {
         JLabel jlabel = new JLabel();
 
         frame.setVisible(true);
-        for (BufferedImage img : images) {
+        for(int i = 0; i < 4; i++){
+            for (BufferedImage img : images) {
 
-            long t1 = System.currentTimeMillis();
+                long t1 = System.currentTimeMillis();
 
-            jlabel.setIcon(new ImageIcon(img));
-            frame.getContentPane().add(jlabel);
-            frame.pack();
+                jlabel.setIcon(new ImageIcon(img));
+                frame.getContentPane().add(jlabel);
+                frame.pack();
 
-            long t2 = System.currentTimeMillis();
-            int miliseconds = (1000 / fps) - (int) (t2 - t1);
-            try {
-                if (miliseconds > 0) {
-                    Thread.sleep(miliseconds);
+                long t2 = System.currentTimeMillis();
+                int miliseconds = (1000 / fps) - (int) (t2 - t1);
+                try {
+                    if (miliseconds > 0) {
+                        Thread.sleep(miliseconds);
+                    }
+                } catch (InterruptedException e) {
+
                 }
-            } catch (InterruptedException e) {
-
             }
         }
     }
@@ -803,7 +838,6 @@ public class Unzip {
         while ((length = fis.read(bytes)) >= 0) {
                 zos.write(bytes, 0, length);
         }
-
         zos.closeEntry();
         fis.close();
     }
@@ -903,4 +937,13 @@ public class Unzip {
     public void setBatch(boolean batch) {
         this.batch = batch;
     }
+
+    public int getFps() {
+        return fps;
+    }
+
+    public void setFps(int fps) {
+        this.fps = fps;
+    }
+    
 }
