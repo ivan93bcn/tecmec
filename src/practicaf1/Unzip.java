@@ -137,6 +137,7 @@ public class Unzip {
 
             zis.closeEntry();
             zis.close();
+            folderToZip("./Cubo", "CuboJPG");
             
             if (encode && !decode) {
                 this.encode(images);
@@ -151,15 +152,19 @@ public class Unzip {
             //Reprodueix les imatges amb un fps concret
 
             System.out.println("Done");
+            
+            
+            
             return true;
 
         } catch (IOException ex) {
             return false;
         }
+        
     }
 
     public void encode(ArrayList<BufferedImage> images) {
-        
+        T_ini = System.nanoTime();
         System.out.println("Codificando imagenes...");
         
         ArrayList<ImgContainer> images_origenes = new ArrayList<ImgContainer>();
@@ -187,7 +192,11 @@ public class Unzip {
 
             for(int i = 0; i < images_origenes.size(); i++){
                 String nombreArchivo = "";
-                nombreArchivo = "codification/Cubo0"+contNombre+".jpeg";
+                if (contNombre<10){
+                    nombreArchivo = "codification/Cubo0"+contNombre+".jpeg";
+                }else{
+                    nombreArchivo = "codification/Cubo"+contNombre+".jpeg";
+                }
                 File outputFile = new File(nombreArchivo);
                 FileOutputStream fos = new FileOutputStream(outputFile);
                 ImageIO.write(images_origenes.get(i).getBufImg(), "jpeg", fos);
@@ -214,7 +223,7 @@ public class Unzip {
                     }
                 } else{
                     for(int j = 0; j < this.gop; j++){
-                        if (contNombre<10){
+                        if (contNombre < 10){
                              nombreArchivo = "codification/Cubo0"+contNombre+".jpeg";
                         }else{
                              nombreArchivo = "codification/Cubo"+contNombre+".jpeg";
@@ -243,9 +252,25 @@ public class Unzip {
         saveResults(finalData);
                 
         System.out.println("Reproduciendo imagenes codificadas...");
+        T_fin = System.nanoTime();
+        System.out.println("Tiempo de Codificación: "+(T_fin - T_ini)/1000 + " milisegundos");
+        
+        folderToZip("./codification", "codification");     
+        
+        
+        File f1 = new File("./codification.zip");
+        long codificado = f1.length();
+        File f2 = new File("./CuboJPG.zip");
+        long original = f2.length();
+        float valor = codificado*100/original;
+        System.out.println("original: "+original+", codificado:"+codificado);
+        System.out.println("La proporcion de compresión es 100:"+valor);
+        
+        
         
         playList(imagesEncoded, this.fps);
-        folderToZip("./codification");
+        
+        
     }
 
     /*FALTA QUE LE PASEMOS EL ARCHIVO COMPRIMIDO
@@ -254,7 +279,7 @@ public class Unzip {
         Y luego llame al metodo getDecode y le pase la imagen original 0, la imagen codificada, y la matriz myData
     */
     public void decode() throws IOException {
-        
+        T_ini= System.nanoTime();
         System.out.println("Decodificando imagenes...");
         
         ArrayList<ArrayList<Tesela>> arrayTes = decodeFile(); //llenamos el arraylist con los datos del fichero
@@ -348,7 +373,9 @@ public class Unzip {
         }
         
         System.out.println("Reproduciendo imagenes decodificadas...");
-
+        T_fin = System.nanoTime();
+        System.out.println("Tiempo de Decodificación: "+(T_fin - T_ini)/1000000 + " milisegundos");
+        
         playList(imagesDecoded, this.fps);
     }
     
@@ -463,7 +490,7 @@ public class Unzip {
    }
   
     public ImgContainer getEncode(ImgContainer base, ImgContainer destino) {
-        T_ini = System.nanoTime();
+        
         teselar(base);
         ImgContainer result = new ImgContainer(ImgContainer.copia(destino.getBufImg()), "resultat");
         ImgContainer result_track = new ImgContainer(ImgContainer.copia(destino.getBufImg()), "proces");
@@ -579,7 +606,6 @@ public class Unzip {
             //System.out.println();
         }
         N_coincidencias = n_coincidencias;
-        T_fin = System.nanoTime();
         
         finalData.add(arrayTeselas);
         //saveResults(arrayTeselas, indice);
@@ -785,11 +811,11 @@ public class Unzip {
         return imgFiltered;
     }
 
-    public static void folderToZip(String folder){
+    public static void folderToZip(String folder, String zipFolder){
         File directoryToZip = new File(folder);
         List<File> fileList = new ArrayList<File>();
         getAllFiles(directoryToZip, fileList);
-        writeZipFile(directoryToZip, fileList);
+        writeZipFile(directoryToZip, fileList, zipFolder);
     }
     
     public static void getAllFiles(File dir, List<File> fileList) {
@@ -802,10 +828,10 @@ public class Unzip {
         }
     }
 
-    public static void writeZipFile(File directoryToZip, List<File> fileList) {
+    public static void writeZipFile(File directoryToZip, List<File> fileList, String zipFolder) {
 
         try {
-                FileOutputStream fos = new FileOutputStream(directoryToZip.getName() + ".zip");
+                FileOutputStream fos = new FileOutputStream(zipFolder + ".zip");
                 ZipOutputStream zos = new ZipOutputStream(fos);
 
                 for (File file : fileList) {
